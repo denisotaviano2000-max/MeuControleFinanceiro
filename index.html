@@ -1,0 +1,2107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meu Controle Financeiro</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f2f4f7;
+    margin: 0;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+}
+
+button {
+    padding: 12px;
+    border: 0;
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+input,
+select {
+    width: 100%;
+    padding: 12px;
+    margin: 6px 0 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 16px;
+}
+
+.oculto {
+    display: none !important;
+}
+
+/* LOGIN */
+
+#telaLogin {
+    max-width: 420px;
+    margin: 80px auto;
+}
+
+.login-box {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.12);
+}
+
+.login-box h1 {
+    margin-top: 0;
+}
+
+.btn-login {
+    background: #0d6efd;
+    width: 100%;
+    margin-top: 10px;
+}
+
+#mensagemLogin {
+    margin-top: 15px;
+    text-align: center;
+    font-weight: bold;
+}
+
+/* TOPO */
+
+.topo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.btn-sair {
+    background: #6c757d;
+}
+
+/* RESUMO */
+
+.resumo {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.card {
+    background: white;
+    padding: 18px;
+    border-radius: 10px;
+    flex: 1;
+    min-width: 180px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.1);
+}
+
+.card p {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+/* FORMULARIOS */
+
+.formulario {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.1);
+}
+
+.btn-entrada {
+    background: #198754;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.btn-saida {
+    background: #dc3545;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.btn-excluir {
+    background: #dc3545;
+    width: 100%;
+    margin-top: 15px;
+}
+
+.btn-pagar {
+    background: #198754;
+    padding: 8px 12px;
+}
+
+/* DIAS */
+
+.dias {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.dia {
+    background: #eee;
+    padding: 9px;
+    border-radius: 6px;
+}
+
+.dia input {
+    width: auto;
+    margin: 0 5px 0 0;
+}
+
+/* DIVIDAS */
+
+.divida {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    overflow: hidden;
+}
+
+.cabecalho-divida {
+    padding: 18px;
+    cursor: pointer;
+}
+
+.parcelas {
+    border-top: 1px solid #ddd;
+}
+
+.parcela {
+    padding: 14px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.parcela.paga {
+    background: #e9f7ef;
+}
+
+.parcela.atrasada {
+    background: #ffe5e5;
+}
+
+.parcela.hoje {
+    background: #fff3cd;
+}
+
+.parcela.futura {
+    background: #eaf3ff;
+}
+
+.info-parcela {
+    line-height: 1.6;
+}
+
+.status-paga {
+    color: #198754;
+    font-weight: bold;
+}
+
+.status-atrasada {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.status-hoje {
+    color: #d39e00;
+    font-weight: bold;
+}
+
+.status-futura {
+    color: #0d6efd;
+    font-weight: bold;
+}
+
+/* MOVIMENTACOES */
+
+.movimentacao {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 15px;
+    border-bottom: 1px solid #ddd;
+    flex-wrap: wrap;
+}
+
+.movimentacao:last-child {
+    border-bottom: none;
+}
+
+.mov-entrada {
+    color: #198754;
+    font-weight: bold;
+}
+
+.mov-saida {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.btn-excluir-mov {
+    background: #dc3545;
+    padding: 7px 10px;
+}
+
+.usuario {
+    font-size: 14px;
+    color: #666;
+}
+</style>
+</head>
+
+<body>
+
+<!-- ================= LOGIN ================= -->
+
+<div id="telaLogin">
+
+    <div class="login-box">
+
+        <h1>💰</h1>
+
+        <h2>Meu Controle Financeiro</h2>
+
+        <p>Entre na sua conta para acessar seus dados.</p>
+
+        <label>E-mail</label>
+        <input
+            id="loginEmail"
+            type="email"
+            placeholder="seu@email.com"
+        >
+
+        <label>Senha</label>
+        <input
+            id="loginSenha"
+            type="password"
+            placeholder="Sua senha"
+        >
+
+        <button
+            class="btn-login"
+            onclick="fazerLogin()"
+        >
+            🔐 Entrar
+        </button>
+
+        <div id="mensagemLogin"></div>
+
+    </div>
+
+</div>
+
+
+<!-- ================= PROGRAMA ================= -->
+
+<div id="programa" class="oculto">
+
+    <div class="topo">
+
+        <div>
+            <h1>💰 Meu Controle Financeiro</h1>
+
+            <div class="usuario">
+                Conta: <span id="emailUsuario"></span>
+            </div>
+        </div>
+
+        <button
+            class="btn-sair"
+            onclick="sair()"
+        >
+            Sair
+        </button>
+
+    </div>
+
+
+    <!-- RESUMO -->
+
+    <div class="resumo">
+
+        <div class="card">
+            <strong>Saldo</strong>
+            <p id="saldo">R$ 0,00</p>
+        </div>
+
+        <div class="card">
+            <strong>Entradas</strong>
+            <p id="entradas">R$ 0,00</p>
+        </div>
+
+        <div class="card">
+            <strong>Saídas</strong>
+            <p id="saidas">R$ 0,00</p>
+        </div>
+
+        <div class="card">
+            <strong>Dívidas restantes</strong>
+            <p id="totalDividas">R$ 0,00</p>
+        </div>
+
+    </div>
+
+
+    <!-- MOVIMENTAÇÃO -->
+
+    <div class="formulario">
+
+        <h2>💵 Nova movimentação</h2>
+
+        <label>Descrição</label>
+
+        <input
+            id="descricao"
+            type="text"
+            placeholder="Ex.: Pagamento Uber"
+        >
+
+        <label>Valor</label>
+
+        <input
+            id="valorMov"
+            type="number"
+            step="0.01"
+            placeholder="Ex.: 150"
+        >
+
+        <label>Data da movimentação</label>
+<input id="dataMov" type="date">
+        >
+
+        <button
+            class="btn-entrada"
+            onclick="cadastrarMovimentacao('entrada')"
+        >
+            🟢 Cadastrar entrada
+        </button>
+
+        <button
+            class="btn-saida"
+            onclick="cadastrarMovimentacao('saida')"
+        >
+            🔴 Cadastrar saída
+        </button>
+
+    </div>
+
+
+    <!-- HISTÓRICO -->
+
+    <div class="formulario">
+
+        <h2>📊 Histórico de movimentações</h2>
+
+        <div id="historico">
+            Nenhuma movimentação cadastrada.
+        </div>
+
+    </div>
+
+
+    <!-- CADASTRAR DIVIDA -->
+
+    <div class="formulario">
+
+        <h2>➕ Cadastrar dívida</h2>
+
+        <label>Nome da dívida</label>
+
+        <input
+            id="nome"
+            type="text"
+            placeholder="Ex.: Júlio"
+        >
+
+        <label>Valor total</label>
+
+        <input
+            id="valorTotal"
+            type="number"
+            step="0.01"
+            placeholder="Ex.: 2000"
+        >
+
+        <label>Tipo</label>
+
+        <select id="tipo">
+
+            <option value="">
+                Selecione
+            </option>
+
+            <option value="Diária">
+                Diária
+            </option>
+
+            <option value="Semanal">
+                Semanal
+            </option>
+
+            <option value="Mensal">
+                Mensal
+            </option>
+
+        </select>
+
+        <label>Valor de cada pagamento</label>
+
+        <input
+            id="valorParcela"
+            type="number"
+            step="0.01"
+            placeholder="Ex.: 100"
+        >
+
+        <label>Primeira data de pagamento</label>
+
+        <input
+            id="dataInicio"
+            type="date"
+        >
+
+        <h3>
+            Quais dias serão pagos?
+        </h3>
+
+        <div class="dias">
+
+            <label class="dia">
+                <input type="checkbox" value="1">
+                Segunda
+            </label>
+
+            <label class="dia">
+                <input type="checkbox" value="2">
+                Terça
+            </label>
+
+            <label class="dia">
+                <input type="checkbox" value="3">
+                Quarta
+            </label>
+
+            <label class="dia">
+                <input type="checkbox" value="4">
+                Quinta
+            </label>
+
+            <label class="dia">
+                <input type="checkbox" value="5">
+                Sexta
+            </label>
+
+            <label class="dia">
+                <input type="checkbox" value="6">
+                Sábado
+            </label>
+
+            <label class="dia">
+                <input type="checkbox" value="0">
+                Domingo
+            </label>
+
+        </div>
+
+        <button
+            class="btn-entrada"
+            onclick="cadastrarDivida()"
+        >
+            Cadastrar dívida
+        </button>
+
+    </div>
+
+
+    <!-- DIVIDAS -->
+
+    <div class="formulario">
+
+        <h2>📋 Minhas dívidas</h2>
+
+        <div id="lista">
+            Nenhuma dívida cadastrada.
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+/* =====================================================
+   CONFIGURAÇÃO SUPABASE
+===================================================== */
+
+const SUPABASE_URL =
+    "https://hpllxtcmpswfmgfyoqmz.supabase.co";
+
+const SUPABASE_KEY =
+    "sb_publishable_9uasI1S4-YivE9y35SYrqw_D4GHDxP0";
+
+const supabaseClient =
+    window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+    );
+
+
+/* =====================================================
+   VARIÁVEIS
+===================================================== */
+
+let dividas = [];
+
+let movimentacoes = [];
+
+let usuarioAtual = null;
+
+
+/* =====================================================
+   FUNÇÕES GERAIS
+===================================================== */
+
+function dinheiro(valor) {
+
+    return Number(valor).toLocaleString(
+        "pt-BR",
+        {
+            style: "currency",
+            currency: "BRL"
+        }
+    );
+}
+
+
+function dataBR(data) {
+
+    const partes = data.split("-");
+
+    return partes[2] + "/" +
+           partes[1] + "/" +
+           partes[0];
+}
+
+
+function dataHoje() {
+
+    const hoje = new Date();
+
+    const ano =
+        hoje.getFullYear();
+
+    const mes =
+        String(
+            hoje.getMonth() + 1
+        ).padStart(2, "0");
+
+    const dia =
+        String(
+            hoje.getDate()
+        ).padStart(2, "0");
+
+    return ano + "-" +
+           mes + "-" +
+           dia;
+}
+
+
+function colocarDataHoje() {
+
+    document.getElementById(
+        "dataMov"
+    ).value = dataHoje();
+}
+
+
+/* =====================================================
+   LOGIN
+===================================================== */
+
+async function fazerLogin() {
+
+    const email =
+        document.getElementById(
+            "loginEmail"
+        ).value.trim();
+
+    const senha =
+        document.getElementById(
+            "loginSenha"
+        ).value;
+
+    const mensagem =
+        document.getElementById(
+            "mensagemLogin"
+        );
+
+    if (!email || !senha) {
+
+        mensagem.innerText =
+            "Digite o e-mail e a senha.";
+
+        mensagem.style.color =
+            "#dc3545";
+
+        return;
+    }
+
+    mensagem.innerText =
+        "Entrando...";
+
+    mensagem.style.color =
+        "#666";
+
+
+    const { data, error } =
+        await supabaseClient.auth.signInWithPassword({
+            email: email,
+            password: senha
+        });
+
+
+    if (error) {
+
+        mensagem.innerText =
+            "E-mail ou senha incorretos.";
+
+        mensagem.style.color =
+            "#dc3545";
+
+        return;
+    }
+
+
+    usuarioAtual =
+        data.user;
+
+    await entrarNoPrograma();
+
+}
+
+
+async function sair() {
+
+    await supabaseClient.auth.signOut();
+
+    usuarioAtual = null;
+
+    document.getElementById(
+        "programa"
+    ).classList.add("oculto");
+
+    document.getElementById(
+        "telaLogin"
+    ).classList.remove("oculto");
+
+}
+
+
+/* =====================================================
+   ENTRAR NO PROGRAMA
+===================================================== */
+
+async function entrarNoPrograma() {
+
+    document.getElementById(
+        "telaLogin"
+    ).classList.add("oculto");
+
+    document.getElementById(
+        "programa"
+    ).classList.remove("oculto");
+
+    document.getElementById(
+        "emailUsuario"
+    ).innerText =
+        usuarioAtual.email;
+
+    colocarDataHoje();
+
+    await carregarDados();
+
+    mostrarMovimentacoes();
+
+    mostrarDividas();
+
+    atualizarResumo();
+
+}
+
+
+/* =====================================================
+   CARREGAR DADOS DO SUPABASE
+===================================================== */
+
+async function carregarDados() {
+
+    const { data: dadosDividas, error: erroDividas } =
+        await supabaseClient
+            .from("dividas")
+            .select("*")
+            .eq("user_id", usuarioAtual.id)
+            .order("created_at", {
+                ascending: true
+            });
+
+
+    if (erroDividas) {
+
+        console.error(
+            erroDividas
+        );
+
+        alert(
+            "Erro ao carregar as dívidas."
+        );
+
+        return;
+    }
+
+
+    const { data: dadosMovimentacoes, error: erroMovimentacoes } =
+        await supabaseClient
+            .from("movimentacoes")
+            .select("*")
+            .eq("user_id", usuarioAtual.id)
+            .order("data", {
+                ascending: false
+            });
+
+
+    if (erroMovimentacoes) {
+
+        console.error(
+            erroMovimentacoes
+        );
+
+        alert(
+            "Erro ao carregar as movimentações."
+        );
+
+        return;
+    }
+
+
+    dividas =
+        (dadosDividas || []).map(d => ({
+
+            id: d.id,
+
+            nome: d.nome,
+
+            valorTotal:
+                Number(d.valor_total),
+
+            tipo: d.tipo,
+
+            valorParcela:
+                Number(d.valor_parcela),
+
+            dataInicio:
+                d.data_inicio,
+
+            dias:
+                d.dias || [],
+
+            parcelas:
+                d.parcelas || []
+
+        }));
+
+
+    movimentacoes =
+        (dadosMovimentacoes || []).map(m => ({
+
+            id: m.id,
+
+            descricao:
+                m.descricao,
+
+            valor:
+                Number(m.valor),
+
+            data:
+                m.data,
+
+            tipo:
+                m.tipo
+
+        }));
+
+}
+
+
+/* =====================================================
+   MOVIMENTAÇÕES
+===================================================== */
+
+async function cadastrarMovimentacao(tipo) {
+
+    const descricao =
+        document.getElementById(
+            "descricao"
+        ).value.trim();
+
+    const valor =
+        Number(
+            document.getElementById(
+                "valorMov"
+            ).value
+        );
+
+    const data =
+        document.getElementById(
+            "dataMov"
+        ).value;
+
+
+    if (!descricao) {
+
+        alert(
+            "Digite uma descrição."
+        );
+
+        return;
+    }
+
+
+    if (!valor || valor <= 0) {
+
+        alert(
+            "Digite um valor válido."
+        );
+
+        return;
+    }
+
+
+    if (!data) {
+
+        alert(
+            "Escolha a data."
+        );
+
+        return;
+    }
+
+
+    const { data: novaMov, error } =
+        await supabaseClient
+            .from("movimentacoes")
+            .insert({
+
+                user_id:
+                    usuarioAtual.id,
+
+                descricao:
+                    descricao,
+
+                valor:
+                    valor,
+
+                data:
+                    data,
+
+                tipo:
+                    tipo
+
+            })
+            .select()
+            .single();
+
+
+    if (error) {
+
+        console.error(error);
+
+        alert(
+            "Erro ao salvar a movimentação."
+        );
+
+        return;
+    }
+
+
+    movimentacoes.push({
+
+        id:
+            novaMov.id,
+
+        descricao:
+            novaMov.descricao,
+
+        valor:
+            Number(novaMov.valor),
+
+        data:
+            novaMov.data,
+
+        tipo:
+            novaMov.tipo
+
+    });
+
+
+    mostrarMovimentacoes();
+
+    atualizarResumo();
+
+
+    document.getElementById(
+        "descricao"
+    ).value = "";
+
+    document.getElementById(
+        "valorMov"
+    ).value = "";
+
+    colocarDataHoje();
+
+}
+
+
+function mostrarMovimentacoes() {
+
+    const historico =
+        document.getElementById(
+            "historico"
+        );
+
+
+    if (movimentacoes.length === 0) {
+
+        historico.innerHTML =
+            "Nenhuma movimentação cadastrada.";
+
+        return;
+    }
+
+
+    const ordenadas =
+        [...movimentacoes].sort(
+            (a,b) =>
+                b.data.localeCompare(
+                    a.data
+                )
+        );
+
+
+    historico.innerHTML = "";
+
+
+    ordenadas.forEach(mov => {
+
+        const div =
+            document.createElement(
+                "div"
+            );
+
+        div.className =
+            "movimentacao";
+
+
+        const entrada =
+            mov.tipo === "entrada";
+
+
+        div.innerHTML = `
+
+            <div>
+
+                <strong>
+                    ${entrada ? "🟢" : "🔴"}
+                    ${mov.descricao}
+                </strong>
+
+                <br>
+
+                📅 ${dataBR(mov.data)}
+
+                <br>
+
+                <span
+                    class="${
+                        entrada
+                        ? "mov-entrada"
+                        : "mov-saida"
+                    }"
+                >
+                    ${entrada ? "+" : "-"}
+                    ${dinheiro(mov.valor)}
+                </span>
+
+            </div>
+
+            <button
+                class="btn-excluir-mov"
+                onclick="
+                    excluirMovimentacao(
+                        ${mov.id}
+                    )
+                "
+            >
+                🗑️
+            </button>
+
+        `;
+
+
+        historico.appendChild(div);
+
+    });
+
+}
+
+
+async function excluirMovimentacao(id) {
+
+    if (
+        !confirm(
+            "Excluir esta movimentação?"
+        )
+    ) return;
+
+
+    const { error } =
+        await supabaseClient
+            .from("movimentacoes")
+            .delete()
+            .eq("id", id)
+            .eq(
+                "user_id",
+                usuarioAtual.id
+            );
+
+
+    if (error) {
+
+        console.error(error);
+
+        alert(
+            "Erro ao excluir a movimentação."
+        );
+
+        return;
+    }
+
+
+    movimentacoes =
+        movimentacoes.filter(
+            mov => mov.id !== id
+        );
+
+
+    mostrarMovimentacoes();
+
+    atualizarResumo();
+
+}
+
+
+/* =====================================================
+   STATUS DA PARCELA
+===================================================== */
+
+function verificarStatus(parcela) {
+
+    if (parcela.paga) {
+
+        return {
+            classe: "paga",
+            texto: "✅ PAGA"
+        };
+
+    }
+
+
+    const hoje =
+        dataHoje();
+
+
+    if (parcela.data < hoje) {
+
+        return {
+            classe: "atrasada",
+            texto: "🔴 ATRASADA"
+        };
+
+    }
+
+
+    if (parcela.data === hoje) {
+
+        return {
+            classe: "hoje",
+            texto: "🟠 VENCE HOJE"
+        };
+
+    }
+
+
+    return {
+        classe: "futura",
+        texto: "🔵 PENDENTE"
+    };
+
+}
+
+
+/* =====================================================
+   CADASTRAR DIVIDA
+===================================================== */
+
+async function cadastrarDivida() {
+
+    const nome =
+        document.getElementById(
+            "nome"
+        ).value.trim();
+
+
+    const valorTotal =
+        Number(
+            document.getElementById(
+                "valorTotal"
+            ).value
+        );
+
+
+    const tipo =
+        document.getElementById(
+            "tipo"
+        ).value;
+
+
+    const valorParcela =
+        Number(
+            document.getElementById(
+                "valorParcela"
+            ).value
+        );
+
+
+    const dataInicio =
+        document.getElementById(
+            "dataInicio"
+        ).value;
+
+
+    const checkboxes =
+        document.querySelectorAll(
+            ".dias input[type='checkbox']:checked"
+        );
+
+
+    const diasEscolhidos =
+        Array.from(
+            checkboxes
+        ).map(
+            checkbox =>
+                Number(
+                    checkbox.value
+                )
+        );
+
+
+    if (!nome) {
+
+        alert(
+            "Digite o nome da dívida."
+        );
+
+        return;
+    }
+
+
+    if (
+        !valorTotal ||
+        valorTotal <= 0
+    ) {
+
+        alert(
+            "Digite o valor total."
+        );
+
+        return;
+    }
+
+
+    if (!tipo) {
+
+        alert(
+            "Escolha o tipo da dívida."
+        );
+
+        return;
+    }
+
+
+    if (
+        !valorParcela ||
+        valorParcela <= 0
+    ) {
+
+        alert(
+            "Digite o valor de cada pagamento."
+        );
+
+        return;
+    }
+
+
+    if (!dataInicio) {
+
+        alert(
+            "Escolha a primeira data."
+        );
+
+        return;
+    }
+
+
+    if (
+        diasEscolhidos.length === 0
+    ) {
+
+        alert(
+            "Escolha pelo menos um dia da semana."
+        );
+
+        return;
+    }
+
+
+    const quantidade =
+        Math.ceil(
+            valorTotal /
+            valorParcela
+        );
+
+
+    const parcelas = [];
+
+
+    let data =
+        new Date(
+            dataInicio +
+            "T00:00:00"
+        );
+
+
+    while (
+        parcelas.length <
+        quantidade
+    ) {
+
+        const dia =
+            data.getDay();
+
+
+        if (
+            diasEscolhidos.includes(
+                dia
+            )
+        ) {
+
+            let valor =
+                valorParcela;
+
+
+            if (
+                parcelas.length ===
+                quantidade - 1
+            ) {
+
+                const valorJaGerado =
+                    valorParcela *
+                    (quantidade - 1);
+
+
+                const diferenca =
+                    valorTotal -
+                    valorJaGerado;
+
+
+                if (
+                    diferenca > 0
+                ) {
+
+                    valor =
+                        diferenca;
+
+                }
+
+            }
+
+
+            parcelas.push({
+
+                numero:
+                    parcelas.length + 1,
+
+                data:
+                    data.getFullYear() +
+                    "-" +
+                    String(
+                        data.getMonth() + 1
+                    ).padStart(2, "0") +
+                    "-" +
+                    String(
+                        data.getDate()
+                    ).padStart(2, "0"),
+
+                valor:
+                    valor,
+
+                paga:
+                    false
+
+            });
+
+        }
+
+
+        data.setDate(
+            data.getDate() + 1
+        );
+
+    }
+
+
+    const { data: novaDivida, error } =
+        await supabaseClient
+            .from("dividas")
+            .insert({
+
+                user_id:
+                    usuarioAtual.id,
+
+                nome:
+                    nome,
+
+                valor_total:
+                    valorTotal,
+
+                tipo:
+                    tipo,
+
+                valor_parcela:
+                    valorParcela,
+
+                data_inicio:
+                    dataInicio,
+
+                dias:
+                    diasEscolhidos,
+
+                parcelas:
+                    parcelas
+
+            })
+            .select()
+            .single();
+
+
+    if (error) {
+
+        console.error(error);
+
+        alert(
+            "Erro ao salvar a dívida."
+        );
+
+        return;
+    }
+
+
+    dividas.push({
+
+        id:
+            novaDivida.id,
+
+        nome:
+            novaDivida.nome,
+
+        valorTotal:
+            Number(
+                novaDivida.valor_total
+            ),
+
+        tipo:
+            novaDivida.tipo,
+
+        valorParcela:
+            Number(
+                novaDivida.valor_parcela
+            ),
+
+        dataInicio:
+            novaDivida.data_inicio,
+
+        dias:
+            novaDivida.dias || [],
+
+        parcelas:
+            novaDivida.parcelas || []
+
+    });
+
+
+    mostrarDividas();
+
+    atualizarResumo();
+
+
+    document.getElementById(
+        "nome"
+    ).value = "";
+
+    document.getElementById(
+        "valorTotal"
+    ).value = "";
+
+    document.getElementById(
+        "tipo"
+    ).value = "";
+
+    document.getElementById(
+        "valorParcela"
+    ).value = "";
+
+    document.getElementById(
+        "dataInicio"
+    ).value = "";
+
+
+    document.querySelectorAll(
+        ".dias input"
+    ).forEach(
+        checkbox =>
+            checkbox.checked = false
+    );
+
+}
+
+
+/* =====================================================
+   ABRIR DIVIDA
+===================================================== */
+
+function abrir(id) {
+
+    const elemento =
+        document.getElementById(
+            "parcelas-" + id
+        );
+
+
+    elemento.classList.toggle(
+        "oculto"
+    );
+
+}
+
+
+/* =====================================================
+   PAGAR PARCELA
+===================================================== */
+
+async function pagar(
+    idDivida,
+    numero
+) {
+
+    const divida =
+        dividas.find(
+            d =>
+                d.id === idDivida
+        );
+
+
+    if (!divida) return;
+
+
+    const parcela =
+        divida.parcelas.find(
+            p =>
+                p.numero === numero
+        );
+
+
+    if (!parcela) return;
+
+
+    parcela.paga =
+        !parcela.paga;
+
+
+    const { error } =
+        await supabaseClient
+            .from("dividas")
+            .update({
+                parcelas:
+                    divida.parcelas
+            })
+            .eq(
+                "id",
+                idDivida
+            )
+            .eq(
+                "user_id",
+                usuarioAtual.id
+            );
+
+
+    if (error) {
+
+        console.error(error);
+
+        alert(
+            "Erro ao atualizar a parcela."
+        );
+
+        parcela.paga =
+            !parcela.paga;
+
+        return;
+    }
+
+
+    mostrarDividas();
+
+    atualizarResumo();
+
+}
+
+
+/* =====================================================
+   EXCLUIR DIVIDA
+===================================================== */
+
+async function excluir(id) {
+
+    if (
+        !confirm(
+            "Excluir esta dívida?"
+        )
+    ) return;
+
+
+    const { error } =
+        await supabaseClient
+            .from("dividas")
+            .delete()
+            .eq(
+                "id",
+                id
+            )
+            .eq(
+                "user_id",
+                usuarioAtual.id
+            );
+
+
+    if (error) {
+
+        console.error(error);
+
+        alert(
+            "Erro ao excluir a dívida."
+        );
+
+        return;
+    }
+
+
+    dividas =
+        dividas.filter(
+            d =>
+                d.id !== id
+        );
+
+
+    mostrarDividas();
+
+    atualizarResumo();
+
+}
+
+
+/* =====================================================
+   MOSTRAR DIVIDAS
+===================================================== */
+
+function mostrarDividas() {
+
+    const lista =
+        document.getElementById(
+            "lista"
+        );
+
+
+    if (dividas.length === 0) {
+
+        lista.innerHTML =
+            "Nenhuma dívida cadastrada.";
+
+        atualizarTotalDividas();
+
+        return;
+    }
+
+
+    lista.innerHTML = "";
+
+
+    dividas.forEach(
+        divida => {
+
+            const pago =
+                divida.parcelas
+                    .filter(
+                        p =>
+                            p.paga
+                    )
+                    .reduce(
+                        (
+                            soma,
+                            p
+                        ) =>
+                            soma +
+                            Number(
+                                p.valor
+                            ),
+                        0
+                    );
+
+
+            const restante =
+                Math.max(
+                    0,
+                    divida.valorTotal -
+                    pago
+                );
+
+
+            const pagas =
+                divida.parcelas
+                    .filter(
+                        p =>
+                            p.paga
+                    )
+                    .length;
+
+
+            const bloco =
+                document.createElement(
+                    "div"
+                );
+
+
+            bloco.className =
+                "divida";
+
+
+            let htmlParcelas =
+                "";
+
+
+            divida.parcelas.forEach(
+                parcela => {
+
+                    const status =
+                        verificarStatus(
+                            parcela
+                        );
+
+
+                    htmlParcelas += `
+
+                        <div
+                            class="parcela ${status.classe}"
+                        >
+
+                            <div
+                                class="info-parcela"
+                            >
+
+                                <strong>
+                                    Parcela
+                                    ${parcela.numero}/${divida.parcelas.length}
+                                </strong>
+
+                                <br>
+
+                                📅
+                                ${dataBR(
+                                    parcela.data
+                                )}
+
+                                <br>
+
+                                💰
+                                ${dinheiro(
+                                    parcela.valor
+                                )}
+
+                                <br>
+
+                                <span
+                                    class="status-${status.classe}"
+                                >
+                                    ${status.texto}
+                                </span>
+
+                            </div>
+
+
+                            <button
+                                class="btn-pagar"
+                                onclick="
+                                    pagar(
+                                        ${divida.id},
+                                        ${parcela.numero}
+                                    )
+                                "
+                            >
+                                ${
+                                    parcela.paga
+                                    ? "Desmarcar"
+                                    : "Pagar"
+                                }
+                            </button>
+
+                        </div>
+
+                    `;
+
+                }
+            );
+
+
+            bloco.innerHTML = `
+
+                <div
+                    class="cabecalho-divida"
+                    onclick="
+                        abrir(
+                            ${divida.id}
+                        )
+                    "
+                >
+
+                    <h2>
+                        ${divida.nome} ▼
+                    </h2>
+
+                    <p>
+                        Tipo:
+                        <strong>
+                            ${divida.tipo}
+                        </strong>
+                    </p>
+
+                    <p>
+                        Total:
+                        <strong>
+                            ${dinheiro(
+                                divida.valorTotal
+                            )}
+                        </strong>
+                    </p>
+
+                    <p>
+                        Pago:
+                        <strong>
+                            ${dinheiro(
+                                pago
+                            )}
+                        </strong>
+                    </p>
+
+                    <p>
+                        Restante:
+                        <strong>
+                            ${dinheiro(
+                                restante
+                            )}
+                        </strong>
+                    </p>
+
+                    <p>
+                        Pagamentos:
+                        ${pagas}/${divida.parcelas.length}
+                    </p>
+
+                </div>
+
+
+                <div
+                    id="parcelas-${divida.id}"
+                    class="parcelas oculto"
+                >
+
+                    ${htmlParcelas}
+
+
+                    <div
+                        style="padding:15px"
+                    >
+
+                        <button
+                            class="btn-excluir"
+                            onclick="
+                                excluir(
+                                    ${divida.id}
+                                )
+                            "
+                        >
+                            🗑️ Excluir dívida
+                        </button>
+
+                    </div>
+
+                </div>
+
+            `;
+
+
+            lista.appendChild(
+                bloco
+            );
+
+        }
+    );
+
+
+    atualizarTotalDividas();
+
+}
+
+
+/* =====================================================
+   TOTAL DAS DIVIDAS
+===================================================== */
+
+function atualizarTotalDividas() {
+
+    let total = 0;
+
+
+    dividas.forEach(
+        divida => {
+
+            const pago =
+                divida.parcelas
+                    .filter(
+                        p =>
+                            p.paga
+                    )
+                    .reduce(
+                        (
+                            soma,
+                            p
+                        ) =>
+                            soma +
+                            Number(
+                                p.valor
+                            ),
+                        0
+                    );
+
+
+            total +=
+                Math.max(
+                    0,
+                    divida.valorTotal -
+                    pago
+                );
+
+        }
+    );
+
+
+    document.getElementById(
+        "totalDividas"
+    ).innerText =
+        dinheiro(total);
+
+}
+
+
+/* =====================================================
+   RESUMO
+===================================================== */
+
+function atualizarResumo() {
+
+    let totalEntradas = 0;
+
+    let totalSaidas = 0;
+
+
+    movimentacoes.forEach(
+        mov => {
+
+            if (
+                mov.tipo ===
+                "entrada"
+            ) {
+
+                totalEntradas +=
+                    Number(
+                        mov.valor
+                    );
+
+            } else {
+
+                totalSaidas +=
+                    Number(
+                        mov.valor
+                    );
+
+            }
+
+        }
+    );
+
+
+    const saldo =
+        totalEntradas -
+        totalSaidas;
+
+
+    document.getElementById(
+        "entradas"
+    ).innerText =
+        dinheiro(
+            totalEntradas
+        );
+
+
+    document.getElementById(
+        "saidas"
+    ).innerText =
+        dinheiro(
+            totalSaidas
+        );
+
+
+    document.getElementById(
+        "saldo"
+    ).innerText =
+        dinheiro(
+            saldo
+        );
+
+
+    atualizarTotalDividas();
+
+}
+
+
+/* =====================================================
+   VERIFICAR SE JÁ ESTÁ LOGADO
+===================================================== */
+
+async function iniciar() {
+
+    const {
+        data
+    } =
+        await supabaseClient.auth.getSession();
+
+
+    if (
+        data &&
+        data.session
+    ) {
+
+        usuarioAtual =
+            data.session.user;
+
+        await entrarNoPrograma();
+
+    } else {
+
+        document.getElementById(
+            "telaLogin"
+        ).classList.remove(
+            "oculto"
+        );
+
+        document.getElementById(
+            "programa"
+        ).classList.add(
+            "oculto"
+        );
+
+        colocarDataHoje();
+
+    }
+
+}
+
+
+supabaseClient.auth.onAuthStateChange(
+    async (
+        event,
+        session
+    ) => {
+
+        if (
+            event ===
+            "SIGNED_OUT"
+        ) {
+
+            document.getElementById(
+                "telaLogin"
+            ).classList.remove(
+                "oculto"
+            );
+
+            document.getElementById(
+                "programa"
+            ).classList.add(
+                "oculto"
+            );
+
+        }
+
+    }
+);
+
+
+iniciar();
+
+</script>
+
+</body>
+</html>
