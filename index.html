@@ -511,8 +511,29 @@ function parseParcels(debt){
 }
 function debtBalance(d){return parseParcels(d).reduce((s,p)=>s+num(p.saldo),0)}
 function pendingCount(d){return parseParcels(d).filter(p=>p.saldo>0).length}
-function debtPaid(d){return Math.max(0,num(d.valor_total)-debtBalance(d))}
-function debtOverdue(d){return parseParcels(d).reduce((s,p)=>s+(p.saldo>0&&p.data<today()?p.saldo:0),0)}
+
+// Calcula o valor total já pago considerando principal abatido E todos os juros pagos no histórico
+function debtPaid(d){
+ const parcels = parseParcels(d);
+ let totalPaid = 0;
+ parcels.forEach(p => {
+  const h = historyOf(p);
+  h.forEach(item => {
+   totalPaid += num(item.valor);
+  });
+ });
+ return totalPaid;
+}
+
+// O atraso só conta se a parcela tem saldo, está vencida E NÃO teve juros pagos (já que o juro pago joga o vencimento para frente)
+function debtOverdue(d){
+ return parseParcels(d).reduce((s,p)=>{
+  const hasInterestOnly = historyOf(p).some(h=>String(h.tipo||"").toLowerCase()==="juros");
+  const isLate = p.saldo>0 && p.data<today() && !hasInterestOnly;
+  return s + (isLate ? p.saldo : 0);
+ },0);
+}
+
 function historyOf(p){return Array.isArray(p.historico)?p.historico:[]}
 function renderAll(){renderDebts();renderMovements();renderInvestments();renderDashboard()}
 
@@ -538,9 +559,9 @@ function renderDashboard(){
  $("investmentReceived").textContent=money(investments.reduce((s,i)=>s+num(i.lucro_recebido),0));
  $("investmentPending").textContent=investments.filter(i=>!i.data_recebimento).length;
  const original=debts.reduce((s,d)=>s+num(d.valor_total),0);
- const paid=Math.max(0,original-remaining);
+ const paid=debts.reduce((s,d)=>s+debtPaid(d),0);
  $("debtProgress").style.width=(original?Math.min(100,paid/original*100):0)+"%";
- $("debtProgressText").textContent=original?`${money(paid)} pagos de ${money(original)} do valor original`:"Adicione suas dívidas para começar.";
+ $("debtProgressText").textContent=original?`${money(paid)} pagos no total (incluindo juros)`:"Adicione suas dívidas para começar.";
  $("recentMovements").innerHTML=movements.slice(0,5).map(m=>`<div class="list-item"><div class="list-icon ${m.tipo==="entrada"?"green":"red"}">${m.tipo==="entrada"?"↙":"↗"}</div><div class="list-desc"><strong>${esc(m.descricao)}</strong><small>${dateBR(m.data)}</small></div><div class="list-amount ${m.tipo==="entrada"?"green":"red"}">${m.tipo==="entrada"?"+":"−"} ${money(m.valor)}</div></div>`).join("")||'<div class="empty">Nenhuma movimentação registrada.</div>';
  $("recentInvestments").innerHTML=investments.slice(0,3).map(i=>`<div class="list-item"><div class="list-icon blue">◈</div><div class="list-desc"><strong>${esc(i.nome)}</strong><small>${i.data_recebimento?"Recebido":"Previsto para "+dateBR(i.data_prevista)}</small></div><div class="list-amount">${money(i.valor_investido)}</div></div>`).join("")||'<div class="empty">Nenhum investimento registrado.</div>';
 }
@@ -560,7 +581,7 @@ function renderDebts(){
     <div><div class="debt-metric-label">Valor total</div><div class="debt-metric-value">${money(d.valor_total)}</div></div>
     <div><div class="debt-metric-label">Valor em atraso</div><div class="debt-metric-value red">${money(late)}</div></div>
     <div><div class="debt-metric-label">Valor pendente fora do atraso</div><div class="debt-metric-value yellow">${money(Math.max(0,balance-late))}</div></div>
-    <div><div class="debt-metric-label">Valor já pago</div><div class="debt-metric-value green">${money(paid)}</div></div>
+    <div><div class="debt-metric-label">Total já pago</div><div class="debt-metric-value green">${money(paid)}</div></div>
    </div><div class="click-note">Clique para abrir as parcelas e os pagamentos →</div>
   </article>`;
  }).join("");
@@ -630,7 +651,7 @@ function renderDebtDetail(){
        <div class="metric-value yellow">${money(Math.max(0,balance-late))}</div>
      </div>
      <div class="card">
-       <div class="metric-label">Já pago</div>
+       <div class="metric-label">Total já pago</div>
        <div class="metric-value green">${money(debtPaid(d))}</div>
      </div>
    </div>
@@ -975,7 +996,6 @@ $("debtForm").addEventListener("submit",async e=>{
 $("refreshDebts").addEventListener("click",carregarDados);
 
 async function saveDebt(d,newParcels){
- // Soma o valor original de todas as parcelas atuais para recalcular o novo valor total corretamente
  const totalNew = newParcels.reduce((s, p) => s + num(p.valor), 0);
  const {error}=await supabaseClient.from("dividas").update({parcelas:newParcels,valor_total:Number(totalNew.toFixed(2))}).eq("id",d.id).eq("user_id",currentUser.id);
  if(error)throw error;
@@ -999,10 +1019,10 @@ async function payInstallment(debtId,index,kind){
 
  const tipoDivida=d.tipo||"mensal";
  const textJurosPrompt = tipoDivida==="diaria"
-  ? "Registrar "+money(amount)+" de juros pagos? (A parcela ficará como Juros pagos e será adicionada uma nova diária no final no valor de "+money(amount)+")"
+  ? "Registrar "+money(amount)+" de juros pagos? (A parcela ficará como Juros pagos e sai do atraso, e será adicionada uma nova diária no final no valor de "+money(amount)+")"
   : tipoDivida==="semanal"
-  ? "Registrar "+money(amount)+" de juros pagos? (A parcela ficará como Juros pagos e será adicionada uma nova semana no final no valor de "+money(amount)+")"
-  : "Registrar "+money(amount)+" de juros pagos? (A parcela ficará como Juros pagos e será adicionado um novo mês no final no valor de "+money(amount)+")";
+  ? "Registrar "+money(amount)+" de juros pagos? (A parcela ficará como Juros pagos e sai do atraso, e será adicionada uma nova semana no final no valor de "+money(amount)+")"
+  : "Registrar "+money(amount)+" de juros pagos? (A parcela ficará como Juros pagos e sai do atraso, e será adicionado um novo mês no final no valor de "+money(amount)+")";
 
  if(kind==="quitar"&&!confirm("Confirmar pagamento de "+money(amount)+" para quitar esta parcela?"))return;
  if(kind==="parcial"&&!confirm("Registrar pagamento parcial de "+money(amount)+"?"))return;
@@ -1036,7 +1056,6 @@ async function payInstallment(debtId,index,kind){
   const newNum=updated.length+1;
   const interestVal=Number(amount.toFixed(2));
 
-  // Adiciona a nova parcela no final com o valor exato do juro pago
   updated.push({
    numero:newNum,
    valor:interestVal,
