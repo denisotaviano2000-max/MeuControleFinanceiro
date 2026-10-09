@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -184,25 +183,21 @@ hr{border:0;border-top:1px solid var(--border);margin:18px 0}
             <div class="form-grid">
               <div class="field"><label for="debtName">Nome da pessoa ou credor</label><input id="debtName" required placeholder="Ex.: Júlio"></div>
               <div class="field"><label for="debtType">Tipo de cobrança</label><select id="debtType"><option value="mensal">Mensal</option><option value="semanal">Semanal</option><option value="diaria">Diária (escolher dias da semana)</option></select></div>
-
               <div class="field full" id="dailyDaysField" style="display:none">
                 <label>Quais dias da semana você paga?</label>
                 <div id="dailyDays" class="weekday-list"></div>
-                <div class="schedule-note">Marque todos os dias em que deve pagar. A data do próximo vencimento aparece ao lado de cada dia selecionado. As parcelas serão criadas somente nesses dias.</div>
+                <div class="schedule-note">Marque todos os dias em que deve pagar. As parcelas serão criadas somente nesses dias.</div>
               </div>
-
               <div class="field" id="weekdayField" style="display:none">
                 <label for="debtWeekday">Dia da semana para pagar</label>
                 <select id="debtWeekday">
                   <option value="1">Segunda-feira</option><option value="2">Terça-feira</option><option value="3">Quarta-feira</option><option value="4">Quinta-feira</option><option value="5">Sexta-feira</option><option value="6" selected>Sábado</option><option value="0">Domingo</option>
                 </select>
               </div>
-
               <div class="field" id="monthdayField">
                 <label for="debtMonthDay">Dia do mês para pagar</label>
                 <select id="debtMonthDay"></select>
               </div>
-
               <div class="field"><label for="debtAmount">Valor total calculado (R$)</label><input id="debtAmount" type="number" step="0.01" value="0.00" readonly><small class="muted">Valor da parcela × quantidade de parcelas.</small></div>
               <div class="field"><label for="debtInstallment">Valor de cada parcela (R$)</label><input id="debtInstallment" type="number" min="0.01" step="0.01" required placeholder="Ex.: 150,00"></div>
               <div class="field"><label for="debtStart">Data inicial da cobrança</label><input id="debtStart" type="date" required><small class="muted">As datas das parcelas serão calculadas a partir desta data.</small></div>
@@ -285,12 +280,9 @@ const pageInfo={
  investments:["Investimentos","Acompanhe valores aplicados e lucros."]
 };
 const WEEKDAYS=[
- {value:1,name:"Segunda-feira"},
- {value:2,name:"Terça-feira"},
- {value:3,name:"Quarta-feira"},
- {value:4,name:"Quinta-feira"},
- {value:5,name:"Sexta-feira"},
- {value:6,name:"Sábado"},
+ {value:1,name:"Segunda-feira"},{value:2,name:"Terça-feira"},
+ {value:3,name:"Quarta-feira"},{value:4,name:"Quinta-feira"},
+ {value:5,name:"Sexta-feira"},{value:6,name:"Sábado"},
  {value:0,name:"Domingo"}
 ];
 
@@ -389,6 +381,15 @@ function addDays(value,amount){
  d.setDate(d.getDate()+amount);
  return formatDateLocal(d);
 }
+function addOneMonthSameDay(value){
+ const d=parseLocalDate(value);
+ const originalDay=d.getDate();
+ d.setDate(1);
+ d.setMonth(d.getMonth()+1);
+ const lastDay=new Date(d.getFullYear(),d.getMonth()+1,0,12).getDate();
+ d.setDate(Math.min(originalDay,lastDay));
+ return formatDateLocal(d);
+}
 function nextWeekdayDate(start,weekday){
  const d=parseLocalDate(start);
  const diff=(Number(weekday)-d.getDay()+7)%7;
@@ -433,27 +434,12 @@ $("debtStart").addEventListener("change",updateDailyDaysPreview);
 buildDailyDays();
 updatePaymentSchedule();
 
-/*
-  Para a cobrança diária, a parcela só vence nos dias selecionados.
-  O array de dias é guardado dentro dos dados JSON das parcelas,
-  sem exigir uma nova coluna na tabela do Supabase.
-*/
 function dueDate(start,type,index,weekday,monthDay,dailyDays){
  const startDate=parseLocalDate(start);
-
  if(type==="diaria"){
-  const selected=Array.isArray(dailyDays)&&dailyDays.length
-   ?dailyDays.map(Number).sort((a,b)=>a-b)
-   :null;
-
-  // Dívidas antigas sem dias escolhidos continuam vencendo diariamente.
-  if(!selected){
-   startDate.setDate(startDate.getDate()+index);
-   return formatDateLocal(startDate);
-  }
-
-  let found=0;
-  let cursor=parseLocalDate(start);
+  const selected=Array.isArray(dailyDays)&&dailyDays.length?dailyDays.map(Number).sort((a,b)=>a-b):null;
+  if(!selected){startDate.setDate(startDate.getDate()+index);return formatDateLocal(startDate)}
+  let found=0,cursor=parseLocalDate(start);
   for(let safety=0;safety<50000;safety++){
    if(selected.includes(cursor.getDay())){
     if(found===index)return formatDateLocal(cursor);
@@ -463,20 +449,16 @@ function dueDate(start,type,index,weekday,monthDay,dailyDays){
   }
   return formatDateLocal(startDate);
  }
-
  if(type==="semanal"){
   const chosen=weekday===undefined||weekday===null?startDate.getDay():Number(weekday);
   const difference=(chosen-startDate.getDay()+7)%7;
   startDate.setDate(startDate.getDate()+difference+index*7);
   return formatDateLocal(startDate);
  }
-
  const chosenDay=Number(monthDay||startDate.getDate());
- let firstYear=startDate.getFullYear();
  let firstMonth=startDate.getMonth();
  if(startDate.getDate()>chosenDay)firstMonth++;
- const targetMonth=firstMonth+index;
- const target=new Date(firstYear,targetMonth,1,12);
+ const target=new Date(startDate.getFullYear(),firstMonth+index,1,12);
  const lastDay=new Date(target.getFullYear(),target.getMonth()+1,0,12).getDate();
  target.setDate(Math.min(chosenDay,lastDay));
  return formatDateLocal(target);
@@ -499,7 +481,7 @@ function parseParcels(debt){
    valor:value,
    saldo:balance,
    paga:paid||balance<=0,
-   data:p.data??p.vencimento??p.data_vencimento??dueDate(debt.data_inicio,debt.tipo,i,undefined,undefined,storedDays),
+   data:p.data??p.vencimento??p.data_vencimento??dueDate(debt.data_inicio,debt.tipo,i,p.dia_semana,p.dia_mes,storedDays),
    historico:Array.isArray(p.historico)?p.historico:[]
   };
  });
@@ -517,7 +499,6 @@ function renderDashboard(){
  const remaining=debts.reduce((s,d)=>s+debtBalance(d),0);
  const invested=investments.reduce((s,i)=>s+num(i.valor_investido),0);
  const expected=investments.filter(i=>!i.data_recebimento).reduce((s,i)=>s+num(i.lucro_previsto),0);
-
  $("homeBalance").textContent=money(income-expenses);
  $("homeDebt").textContent=money(remaining);
  $("homeDebtDetail").textContent=money(remaining);
@@ -533,14 +514,11 @@ function renderDashboard(){
  $("investmentExpected").textContent=money(expected);
  $("investmentReceived").textContent=money(investments.reduce((s,i)=>s+num(i.lucro_recebido),0));
  $("investmentPending").textContent=investments.filter(i=>!i.data_recebimento).length;
-
  const original=debts.reduce((s,d)=>s+num(d.valor_total),0);
  const paid=Math.max(0,original-remaining);
  $("debtProgress").style.width=(original?Math.min(100,paid/original*100):0)+"%";
  $("debtProgressText").textContent=original?`${money(paid)} pagos de ${money(original)} do valor original`:"Adicione suas dívidas para começar.";
-
  $("recentMovements").innerHTML=movements.slice(0,5).map(m=>`<div class="list-item"><div class="list-icon ${m.tipo==="entrada"?"green":"red"}">${m.tipo==="entrada"?"↙":"↗"}</div><div class="list-desc"><strong>${esc(m.descricao)}</strong><small>${dateBR(m.data)}</small></div><div class="list-amount ${m.tipo==="entrada"?"green":"red"}">${m.tipo==="entrada"?"+":"−"} ${money(m.valor)}</div></div>`).join("")||'<div class="empty">Nenhuma movimentação registrada.</div>';
-
  $("recentInvestments").innerHTML=investments.slice(0,3).map(i=>`<div class="list-item"><div class="list-icon blue">◈</div><div class="list-desc"><strong>${esc(i.nome)}</strong><small>${i.data_recebimento?"Recebido":"Previsto para "+dateBR(i.data_prevista)}</small></div><div class="list-amount">${money(i.valor_investido)}</div></div>`).join("")||'<div class="empty">Nenhum investimento registrado.</div>';
 }
 
@@ -563,7 +541,6 @@ function renderDebts(){
    </div><div class="click-note">Clique para abrir as parcelas e os pagamentos →</div>
   </article>`;
  }).join("");
-
  if(selectedDebtId!==null&&debts.some(d=>Number(d.id)===Number(selectedDebtId)))renderDebtDetail();
  else{
   selectedDebtId=null;
@@ -587,94 +564,172 @@ $("backToDebts").addEventListener("click",()=>{
  window.scrollTo({top:0,behavior:"smooth"});
 });
 
+
 function renderDebtDetail(){
  const d=debts.find(x=>Number(x.id)===Number(selectedDebtId));
  if(!d)return;
- const parcels=parseParcels(d),late=debtOverdue(d),balance=debtBalance(d);
+
+ const parcels=parseParcels(d);
+ const late=debtOverdue(d);
+ const balance=debtBalance(d);
 
  $("debtDetailContent").innerHTML=`
- <div class="panel"><div class="panel-head"><div><h2>${esc(d.nome)}</h2><div class="muted small" style="margin-top:6px">${String(d.tipo||"mensal").toUpperCase()} · Início: ${dateBR(d.data_inicio)}</div></div><button class="btn danger smallbtn" onclick="deleteDebt(${Number(d.id)})">Excluir dívida</button></div>
- <div class="detail-summary">
-  <div class="card"><div class="metric-label">Valor total</div><div class="metric-value">${money(d.valor_total)}</div></div>
-  <div class="card"><div class="metric-label">Em atraso</div><div class="metric-value red">${money(late)}</div></div>
-  <div class="card"><div class="metric-label">Pendente fora do atraso</div><div class="metric-value yellow">${money(Math.max(0,balance-late))}</div></div>
-  <div class="card"><div class="metric-label">Já pago</div><div class="metric-value green">${money(debtPaid(d))}</div></div>
- </div>
- <div class="panel-head"><h2>Parcelas de ${esc(d.nome)}</h2><button class="btn secondary smallbtn" onclick="increaseInstallments(${Number(d.id)})">Aumentar parcelas</button></div>
- <div class="table-wrap"><table><thead><tr><th>Parcela</th><th>Vencimento</th><th>Valor original</th><th>Saldo</th><th>Status</th><th>Ações</th></tr></thead><tbody>
- ${parcels.map((p,i)=>`<tr><td>${esc(p.numero)}</td><td>${dateBR(p.data)}</td><td>${money(p.valor)}</td><td>${money(p.saldo)}</td><td><span class="status ${p.saldo<=0?"ok":p.data<today()?"late":"pending"}">${p.saldo<=0?"Paga":p.data<today()?"Em atraso":"Pendente"}</span></td><td>${p.saldo>0?`<button class="btn smallbtn" onclick="payInstallment(${Number(d.id)},${i},'quitar')">Quitar</button> <button class="btn secondary smallbtn" onclick="payInstallment(${Number(d.id)},${i},'parcial')">Parcial</button> <button class="btn bluebtn smallbtn" onclick="payInstallment(${Number(d.id)},${i},'juros')">Só juros</button> <button class="btn secondary smallbtn" onclick="showHistory(${Number(d.id)},${i})">Histórico</button>`:`<button class="btn secondary smallbtn" onclick="showHistory(${Number(d.id)},${i})">Histórico</button>`}</td></tr>`).join("")}
- </tbody></table></div>
- <div class="actions"><button class="btn secondary smallbtn" onclick="showDebtHistory(${Number(d.id)})">Ver histórico de pagamentos</button></div></div>`;
+ <div class="panel">
+
+   <div style="margin-bottom:16px">
+     <h2 style="margin:0;font-size:20px">${esc(d.nome)}</h2>
+     <div class="muted small" style="margin-top:6px">
+       ${String(d.tipo||"mensal").toUpperCase()} · Início: ${dateBR(d.data_inicio)}
+     </div>
+   </div>
+
+   <div style="display:flex;flex-wrap:wrap;gap:8px;margin:0 0 20px">
+     <button type="button" class="btn secondary smallbtn"
+       onclick="editDebt(${Number(d.id)})">
+       ✏️ Editar dívida
+     </button>
+     <button type="button" class="btn danger smallbtn"
+       onclick="deleteDebt(${Number(d.id)})">
+       🗑️ Excluir dívida
+     </button>
+   </div>
+
+   <div class="detail-summary">
+     <div class="card">
+       <div class="metric-label">Valor total</div>
+       <div class="metric-value">${money(d.valor_total)}</div>
+     </div>
+     <div class="card">
+       <div class="metric-label">Em atraso</div>
+       <div class="metric-value red">${money(late)}</div>
+     </div>
+     <div class="card">
+       <div class="metric-label">Pendente fora do atraso</div>
+       <div class="metric-value yellow">${money(Math.max(0,balance-late))}</div>
+     </div>
+     <div class="card">
+       <div class="metric-label">Já pago</div>
+       <div class="metric-value green">${money(debtPaid(d))}</div>
+     </div>
+   </div>
+
+   <div class="panel-head" style="flex-wrap:wrap">
+     <h2>Parcelas de ${esc(d.nome)}</h2>
+     <button type="button" class="btn secondary smallbtn"
+       onclick="increaseInstallments(${Number(d.id)})">
+       Aumentar parcelas
+     </button>
+   </div>
+
+   <div class="table-wrap">
+     <table>
+       <thead>
+         <tr>
+           <th>Parcela</th>
+           <th>Vencimento</th>
+           <th>Valor original</th>
+           <th>Saldo</th>
+           <th>Status</th>
+           <th>Ações</th>
+         </tr>
+       </thead>
+       <tbody>
+         ${parcels.map((p,i)=>`
+           <tr>
+             <td>${esc(p.numero)}</td>
+             <td>${dateBR(p.data)}</td>
+             <td>${money(p.valor)}</td>
+             <td>${money(p.saldo)}</td>
+             <td>
+               <span class="status ${p.saldo<=0?"ok":p.data<today()?"late":"pending"}">
+                 ${p.saldo<=0?"Paga":p.data<today()?"Em atraso":"Pendente"}
+               </span>
+             </td>
+             <td>
+               ${p.saldo>0?`
+                 <button type="button" class="btn smallbtn"
+                   onclick="payInstallment(${Number(d.id)},${i},'quitar')">Quitar</button>
+                 <button type="button" class="btn secondary smallbtn"
+                   onclick="payInstallment(${Number(d.id)},${i},'parcial')">Parcial</button>
+                 <button type="button" class="btn bluebtn smallbtn"
+                   onclick="payInstallment(${Number(d.id)},${i},'juros')">Só juros</button>
+                 <button type="button" class="btn secondary smallbtn"
+                   onclick="showHistory(${Number(d.id)},${i})">Histórico</button>
+               `:`
+                 <button type="button" class="btn secondary smallbtn"
+                   onclick="showHistory(${Number(d.id)},${i})">Histórico</button>
+               `}
+             </td>
+           </tr>
+         `).join("")}
+       </tbody>
+     </table>
+   </div>
+
+   <div class="actions">
+     <button type="button" class="btn secondary smallbtn"
+       onclick="showDebtHistory(${Number(d.id)})">
+       Ver histórico de pagamentos
+     </button>
+   </div>
+
+ </div>`;
 }
 
-/* Cadastro: os dias selecionados são armazenados dentro de cada parcela. */
+async function editDebt(id){
+ const d=debts.find(x=>Number(x.id)===Number(id));
+ if(!d)return;
+ const newName=prompt("Nome da pessoa ou credor:",d.nome);
+ if(newName===null)return;
+ if(!newName.trim())return alert("O nome não pode ficar vazio.");
+ const parcels=parseParcels(d);
+ const firstPending=parcels.find(p=>p.saldo>0);
+ let updated=parcels;
+ if(firstPending){
+  const newDate=prompt("Data do próximo vencimento (AAAA-MM-DD):",firstPending.data);
+  if(newDate===null)return;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(newDate)||Number.isNaN(parseLocalDate(newDate).getTime()))return alert("Informe uma data válida no formato AAAA-MM-DD.");
+  const differenceDays=Math.round((parseLocalDate(newDate)-parseLocalDate(firstPending.data))/86400000);
+  const firstIndex=parcels.indexOf(firstPending);
+  updated=parcels.map((p,i)=>i>=firstIndex&&p.saldo>0?{...p,data:addDays(p.data,differenceDays)}:p);
+ }
+ try{
+  const {error}=await supabaseClient.from("dividas").update({nome:newName.trim(),parcelas:updated}).eq("id",id).eq("user_id",currentUser.id);
+  if(error)throw error;
+  alert("Dívida atualizada com sucesso!");
+  await carregarDados();
+ }catch(err){alert("Erro ao editar dívida: "+err.message)}
+}
+
 $("debtForm").addEventListener("submit",async e=>{
  e.preventDefault();
  if(!currentUser)return;
-
- const name=$("debtName").value.trim();
- const type=$("debtType").value;
+ const name=$("debtName").value.trim(),type=$("debtType").value;
  const installment=Number(num($("debtInstallment").value).toFixed(2));
- const start=$("debtStart").value;
- const count=Math.floor(num($("debtCount").value));
- const weekday=Number($("debtWeekday").value);
- const monthDay=Number($("debtMonthDay").value);
- const total=Number((installment*count).toFixed(2));
- const selectedDays=getSelectedDailyDays();
-
+ const start=$("debtStart").value,count=Math.floor(num($("debtCount").value));
+ const weekday=Number($("debtWeekday").value),monthDay=Number($("debtMonthDay").value);
+ const total=Number((installment*count).toFixed(2)),selectedDays=getSelectedDailyDays();
  if(!name||installment<=0||count<1||!start)return alert("Confira os valores informados.");
  if(type==="diaria"&&!selectedDays.length)return alert("Marque pelo menos um dia da semana para a cobrança diária.");
-
- if(debts.some(d=>String(d.nome).trim().toLocaleLowerCase("pt-BR")===name.toLocaleLowerCase("pt-BR"))){
-  return alert("Já existe uma dívida cadastrada com esse nome. Abra o cartão dessa pessoa para acompanhar as parcelas.");
- }
-
+ if(debts.some(d=>String(d.nome).trim().toLocaleLowerCase("pt-BR")===name.toLocaleLowerCase("pt-BR")))return alert("Já existe uma dívida cadastrada com esse nome. Abra o cartão dessa pessoa para acompanhar as parcelas.");
  const parcels=[];
  for(let i=0;i<count;i++){
-  parcels.push({
-   numero:i+1,
-   valor:installment,
-   saldo:installment,
-   paga:false,
-   data:dueDate(start,type,i,weekday,monthDay,type==="diaria"?selectedDays:null),
-   ...(type==="diaria"?{dias_semana:selectedDays}:{}),
-   ...(type==="semanal"?{dia_semana:weekday}:{}),
-   ...(type==="mensal"?{dia_mes:monthDay}:{}),
-   historico:[]
-  });
+  parcels.push({numero:i+1,valor:installment,saldo:installment,paga:false,data:dueDate(start,type,i,weekday,monthDay,type==="diaria"?selectedDays:null),...(type==="diaria"?{dias_semana:selectedDays}:{}),...(type==="semanal"?{dia_semana:weekday}:{}),...(type==="mensal"?{dia_mes:monthDay}:{}),historico:[]});
  }
-
- const row={
-  user_id:currentUser.id,
-  nome:name,
-  valor_total:total,
-  tipo:type,
-  valor_parcela:installment,
-  data_inicio:start,
-  dias:type==="diaria"?selectedDays.length:type==="semanal"?7:30,
-  parcelas:parcels
- };
-
+ const row={user_id:currentUser.id,nome:name,valor_total:total,tipo:type,valor_parcela:installment,data_inicio:start,dias:type==="diaria"?selectedDays.length:type==="semanal"?7:30,parcelas:parcels};
  const botao=e.submitter;
  if(botao){botao.disabled=true;botao.textContent="Salvando..."}
-
  try{
   const {error}=await supabaseClient.from("dividas").insert(row);
   if(error)throw error;
   alert("Dívida cadastrada com sucesso!");
   e.target.reset();
-  $("debtStart").value=today();
-  $("debtMonthDay").value="5";
-  $("debtWeekday").value="6";
+  $("debtStart").value=today();$("debtMonthDay").value="5";$("debtWeekday").value="6";
   document.querySelectorAll(".daily-weekday").forEach(x=>x.checked=true);
-  updatePaymentSchedule();
-  updateDebtTotal();
+  updatePaymentSchedule();updateDebtTotal();
   await carregarDados();
- }catch(err){
-  alert("Erro ao salvar dívida: "+err.message);
- }finally{
-  if(botao){botao.disabled=false;botao.textContent="Salvar dívida"}
- }
+ }catch(err){alert("Erro ao salvar dívida: "+err.message)}
+ finally{if(botao){botao.disabled=false;botao.textContent="Salvar dívida"}}
 });
 
 $("refreshDebts").addEventListener("click",carregarDados);
@@ -690,7 +745,6 @@ async function payInstallment(debtId,index,kind){
  if(!d)return;
  const parcels=parseParcels(d),p=parcels[index];
  if(!p)return;
-
  let amount;
  if(kind==="quitar")amount=p.saldo;
  else{
@@ -702,14 +756,24 @@ async function payInstallment(debtId,index,kind){
  }
  if(kind==="quitar"&&!confirm("Confirmar pagamento de "+money(amount)+" para quitar esta parcela?"))return;
  if(kind==="parcial"&&!confirm("Registrar pagamento parcial de "+money(amount)+"?"))return;
- if(kind==="juros"&&!confirm("Registrar "+money(amount)+" como juros pagos, sem reduzir o saldo da parcela?"))return;
+ if(kind==="juros"&&!confirm("Registrar "+money(amount)+" como juros pagos, sem reduzir o saldo da parcela?"+(d.tipo==="mensal"?" As parcelas pendentes serão adiadas em um mês.":d.tipo==="semanal"?" As parcelas pendentes serão adiadas em 7 dias.":"")))return;
 
  const updated=parcels.map((item,i)=>{
-  if(i!==index)return item;
-  const hist=[...historyOf(item),{tipo:kind==="juros"?"juros":kind==="parcial"?"parcial":"quitar",valor:Number(amount.toFixed(2)),data:today(),observacao:kind==="juros"?"Juros pagos; saldo principal mantido":""}];
-  if(kind==="juros")return {...item,historico:hist};
-  const newBalance=kind==="quitar"?0:Math.max(0,Number((item.saldo-amount).toFixed(2)));
-  return {...item,saldo:newBalance,paga:newBalance<=0,historico:hist};
+  let result={...item};
+  if(i===index){
+   const hist=[...historyOf(item),{tipo:kind==="juros"?"juros":kind==="parcial"?"parcial":"quitar",valor:Number(amount.toFixed(2)),data:today(),observacao:kind==="juros"?"Juros pagos; saldo principal mantido":""}];
+   if(kind==="juros")result={...item,historico:hist};
+   else{
+    const newBalance=kind==="quitar"?0:Math.max(0,Number((item.saldo-amount).toFixed(2)));
+    result={...item,saldo:newBalance,paga:newBalance<=0,historico:hist};
+   }
+  }
+  if(kind==="juros"&&d.tipo==="mensal"&&i>=index&&item.saldo>0){
+   result={...result,data:addOneMonthSameDay(item.data)};
+  }else if(kind==="juros"&&d.tipo==="semanal"&&i>=index&&item.saldo>0){
+   result={...result,data:addDays(item.data,7)};
+  }
+  return result;
  });
  try{await saveDebt(d,updated)}catch(err){alert("Erro ao registrar pagamento: "+err.message)}
 }
@@ -719,39 +783,22 @@ async function increaseInstallments(id){
  if(!d)return;
  const parcels=parseParcels(d),open=parcels.filter(p=>p.saldo>0);
  if(!open.length)return alert("Esta dívida já está quitada.");
-
  const answer=prompt("Quantas parcelas deseja ter daqui para frente? Há "+open.length+" parcelas pendentes.");
  if(answer===null)return;
  const count=Math.floor(Number(answer));
  if(!Number.isFinite(count)||count<open.length||count<1)return alert("Informe uma quantidade igual ou maior que as parcelas pendentes.");
-
  const balance=debtBalance(d),per=Number((balance/count).toFixed(2));
  let remain=balance;
- const replanned=[];
- const firstDate=open[0].data||today();
-
- // Recupera a programação original, inclusive os dias escolhidos na cobrança diária.
+ const replanned=[],firstDate=open[0].data||today();
  const firstWithDays=open.find(p=>Array.isArray(p.dias_semana)&&p.dias_semana.length);
  const dailyDays=firstWithDays?firstWithDays.dias_semana.map(Number):null;
  const weeklyDay=open.find(p=>p.dia_semana!==undefined)?.dia_semana;
  const monthlyDay=open.find(p=>p.dia_mes!==undefined)?.dia_mes;
-
  for(let i=0;i<count;i++){
   const value=i===count-1?Number(remain.toFixed(2)):Math.min(per,remain);
-  replanned.push({
-   numero:i+1,
-   valor:value,
-   saldo:value,
-   paga:false,
-   data:dueDate(firstDate,d.tipo,i,weeklyDay,monthlyDay,dailyDays),
-   ...(dailyDays?{dias_semana:dailyDays}:{}),
-   ...(weeklyDay!==undefined?{dia_semana:weeklyDay}:{}),
-   ...(monthlyDay!==undefined?{dia_mes:monthlyDay}:{}),
-   historico:[{tipo:"reparcelamento",data:today(),observacao:"Saldo redividido em novas parcelas"}]
-  });
+  replanned.push({numero:i+1,valor:value,saldo:value,paga:false,data:dueDate(firstDate,d.tipo,i,weeklyDay,monthlyDay,dailyDays),...(dailyDays?{dias_semana:dailyDays}:{}),...(weeklyDay!==undefined?{dia_semana:weeklyDay}:{}),...(monthlyDay!==undefined?{dia_mes:monthlyDay}:{}),historico:[{tipo:"reparcelamento",data:today(),observacao:"Saldo redividido em novas parcelas"}]});
   remain=Number((remain-value).toFixed(2));
  }
-
  if(!confirm("O saldo de "+money(balance)+" será dividido em "+count+" novas parcelas. O histórico individual das parcelas anteriores será substituído na lista de parcelas. Continuar?"))return;
  try{await saveDebt(d,replanned)}catch(err){alert("Erro ao alterar parcelas: "+err.message)}
 }
@@ -781,23 +828,38 @@ async function deleteDebt(id){
 $("movementForm").addEventListener("submit",async e=>{
  e.preventDefault();
  if(!currentUser)return;
- const row={
-  user_id:currentUser.id,
-  descricao:$("movementDescription").value.trim(),
-  valor:num($("movementAmount").value),
-  data:$("movementDate").value,
-  tipo:$("movementType").value
- };
+ const row={user_id:currentUser.id,descricao:$("movementDescription").value.trim(),valor:num($("movementAmount").value),data:$("movementDate").value,tipo:$("movementType").value};
  if(row.valor<=0)return alert("Informe um valor maior que zero.");
  const {error}=await supabaseClient.from("movimentacoes").insert(row);
  if(error)return alert("Erro ao salvar movimentação: "+error.message);
- e.target.reset();
- $("movementDate").value=today();
+ e.target.reset();$("movementDate").value=today();
  await carregarDados();
 });
 
 function renderMovements(){
- $("movementsTable").innerHTML=movements.map(m=>`<tr><td>${dateBR(m.data)}</td><td>${esc(m.descricao)}</td><td><span class="status ${m.tipo==="entrada"?"ok":"late"}">${m.tipo==="entrada"?"Entrada":"Saída"}</span></td><td class="${m.tipo==="entrada"?"green":"red"}">${money(m.valor)}</td><td><button class="btn danger smallbtn" onclick="deleteMovement(${Number(m.id)})">Excluir</button></td></tr>`).join("")||'<tr><td colspan="5" class="empty">Nenhuma movimentação cadastrada.</td></tr>';
+ $("movementsTable").innerHTML=movements.map(m=>`<tr><td>${dateBR(m.data)}</td><td>${esc(m.descricao)}</td><td><span class="status ${m.tipo==="entrada"?"ok":"late"}">${m.tipo==="entrada"?"Entrada":"Saída"}</span></td><td class="${m.tipo==="entrada"?"green":"red"}">${money(m.valor)}</td><td><button class="btn secondary smallbtn" onclick="editMovement(${Number(m.id)})">Editar</button> <button class="btn danger smallbtn" onclick="deleteMovement(${Number(m.id)})">Excluir</button></td></tr>`).join("")||'<tr><td colspan="5" class="empty">Nenhuma movimentação cadastrada.</td></tr>';
+}
+async function editMovement(id){
+ const m=movements.find(x=>Number(x.id)===Number(id));
+ if(!m)return;
+ const description=prompt("Descrição:",m.descricao);
+ if(description===null)return;
+ if(!description.trim())return alert("Informe uma descrição.");
+ const valueAnswer=prompt("Valor (R$):",String(num(m.valor).toFixed(2)).replace(".",","));
+ if(valueAnswer===null)return;
+ const value=parseMoney(valueAnswer);
+ if(!Number.isFinite(value)||value<=0)return alert("Informe um valor válido maior que zero.");
+ const typeAnswer=prompt("Tipo: digite entrada ou saida.",m.tipo);
+ if(typeAnswer===null)return;
+ const type=typeAnswer.trim().toLowerCase();
+ if(!["entrada","saida"].includes(type))return alert("Tipo inválido. Digite entrada ou saida.");
+ const date=prompt("Data (AAAA-MM-DD):",String(m.data).slice(0,10));
+ if(date===null)return;
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return alert("Use o formato AAAA-MM-DD.");
+ const {error}=await supabaseClient.from("movimentacoes").update({descricao:description.trim(),valor:value,tipo,data:date}).eq("id",id).eq("user_id",currentUser.id);
+ if(error)return alert("Erro ao editar movimentação: "+error.message);
+ alert("Movimentação atualizada!");
+ await carregarDados();
 }
 async function deleteMovement(id){
  if(!confirm("Deseja excluir esta movimentação?"))return;
@@ -806,42 +868,55 @@ async function deleteMovement(id){
  await carregarDados();
 }
 
-/* Investimentos: usa colunas já utilizadas pelo sistema. */
 $("investmentForm").addEventListener("submit",async e=>{
  e.preventDefault();
  if(!currentUser)return;
  const localInvestimento=$("investmentPlace").value.trim();
- const row={
-  user_id:currentUser.id,
-  nome:localInvestimento,
-  valor_investido:num($("investmentAmount").value),
-  lucro_previsto:num($("investmentProfit").value),
-  data_prevista:$("investmentDue").value,
-  observacao:$("investmentNotes").value.trim()||null
- };
+ const row={user_id:currentUser.id,nome:localInvestimento,valor_investido:num($("investmentAmount").value),lucro_previsto:num($("investmentProfit").value),data_prevista:$("investmentDue").value,observacao:$("investmentNotes").value.trim()||null};
  if(!row.nome)return alert("Informe o local ou a plataforma.");
  if(!row.data_prevista)return alert("Informe a data prevista para retorno.");
  if(row.valor_investido<=0||row.lucro_previsto<0)return alert("Confira os valores do investimento.");
-
  const botao=e.submitter;
  if(botao){botao.disabled=true;botao.textContent="Salvando..."}
  try{
   const {error}=await supabaseClient.from("investimentos").insert(row);
   if(error)throw error;
   alert("Investimento salvo com sucesso!");
-  e.target.reset();
-  $("investmentDue").value=today();
+  e.target.reset();$("investmentDue").value=today();
   await carregarDados();
- }catch(err){
-  alert("Erro ao salvar investimento: "+err.message);
- }finally{
-  if(botao){botao.disabled=false;botao.textContent="Salvar investimento"}
- }
+ }catch(err){alert("Erro ao salvar investimento: "+err.message)}
+ finally{if(botao){botao.disabled=false;botao.textContent="Salvar investimento"}}
 });
 
 function renderInvestments(){
- $("investmentsTable").innerHTML=investments.map(i=>`<tr><td><strong>${esc(i.nome)}</strong>${i.observacao?`<div class="muted small">${esc(i.observacao)}</div>`:""}</td><td>${money(i.valor_investido)}</td><td class="green">${money(i.lucro_previsto)}</td><td>${dateBR(i.data_prevista)}</td><td><span class="status ${i.data_recebimento?"ok":"pending"}">${i.data_recebimento?"Recebido":"Pendente"}</span></td><td>${!i.data_recebimento?`<button class="btn smallbtn" onclick="receiveInvestment(${Number(i.id)})">Registrar retorno</button> `:""}<button class="btn danger smallbtn" onclick="deleteInvestment(${Number(i.id)})">Excluir</button></td></tr>`).join("")||'<tr><td colspan="6" class="empty">Nenhum investimento cadastrado.</td></tr>';
+ $("investmentsTable").innerHTML=investments.map(i=>`<tr><td><strong>${esc(i.nome)}</strong>${i.observacao?`<div class="muted small">${esc(i.observacao)}</div>`:""}</td><td>${money(i.valor_investido)}</td><td class="green">${money(i.lucro_previsto)}</td><td>${dateBR(i.data_prevista)}</td><td><span class="status ${i.data_recebimento?"ok":"pending"}">${i.data_recebimento?"Recebido":"Pendente"}</span></td><td>${!i.data_recebimento?`<button class="btn smallbtn" onclick="receiveInvestment(${Number(i.id)})">Registrar retorno</button> `:""}<button class="btn secondary smallbtn" onclick="editInvestment(${Number(i.id)})">Editar</button> <button class="btn danger smallbtn" onclick="deleteInvestment(${Number(i.id)})">Excluir</button></td></tr>`).join("")||'<tr><td colspan="6" class="empty">Nenhum investimento cadastrado.</td></tr>';
 }
+
+async function editInvestment(id){
+ const i=investments.find(x=>Number(x.id)===Number(id));
+ if(!i)return;
+ const name=prompt("Local ou plataforma:",i.nome);
+ if(name===null)return;
+ if(!name.trim())return alert("Informe o nome do investimento.");
+ const investedAnswer=prompt("Valor investido (R$):",String(num(i.valor_investido).toFixed(2)).replace(".",","));
+ if(investedAnswer===null)return;
+ const invested=parseMoney(investedAnswer);
+ if(!Number.isFinite(invested)||invested<=0)return alert("Informe um valor investido válido.");
+ const profitAnswer=prompt("Lucro previsto (R$):",String(num(i.lucro_previsto).toFixed(2)).replace(".",","));
+ if(profitAnswer===null)return;
+ const profit=parseMoney(profitAnswer);
+ if(!Number.isFinite(profit)||profit<0)return alert("Informe um lucro válido, igual ou maior que zero.");
+ const due=prompt("Data prevista para retorno (AAAA-MM-DD):",String(i.data_prevista||today()).slice(0,10));
+ if(due===null)return;
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(due))return alert("Use o formato AAAA-MM-DD.");
+ const notes=prompt("Observações:",i.observacao||"");
+ if(notes===null)return;
+ const {error}=await supabaseClient.from("investimentos").update({nome:name.trim(),valor_investido:invested,lucro_previsto:profit,data_prevista:due,observacao:notes.trim()||null}).eq("id",id).eq("user_id",currentUser.id);
+ if(error)return alert("Erro ao editar investimento: "+error.message);
+ alert("Investimento atualizado!");
+ await carregarDados();
+}
+
 async function receiveInvestment(id){
  const i=investments.find(x=>Number(x.id)===Number(id));
  if(!i)return;
