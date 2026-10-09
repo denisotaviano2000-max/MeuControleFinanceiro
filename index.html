@@ -1012,7 +1012,7 @@ async function payInstallment(debtId,index,kind){
  }
  if(kind==="quitar"&&!confirm("Confirmar pagamento de "+money(amount)+" para quitar esta parcela?"))return;
  if(kind==="parcial"&&!confirm("Registrar pagamento parcial de "+money(amount)+"?"))return;
- if(kind==="juros"&&!confirm("Registrar "+money(amount)+" como juros pagos, sem reduzir o saldo da parcela?"+(d.tipo==="mensal"?" As parcelas pendentes serão adiadas em um mês.":d.tipo==="semanal"?" As parcelas pendentes serão adiadas em 7 dias.":"")))return;
+ if(kind==="juros"&&!confirm("Registrar "+money(amount)+" como juros pagos, sem reduzir o saldo da parcela e adiando o vencimento das parcelas pendentes para o próximo mês?"))return;
 
  const updated=parcels.map((item,i)=>{
   let result={...item};
@@ -1024,10 +1024,9 @@ async function payInstallment(debtId,index,kind){
     result={...item,saldo:newBalance,paga:newBalance<=0,historico:hist};
    }
   }
-  if(kind==="juros"&&d.tipo==="mensal"&&i>=index&&item.saldo>0){
+  // Ao pagar "só juros", empurra a data de vencimento de todas as parcelas pendentes (da atual em diante) em +1 mês na mesma data.
+  if(kind==="juros"&&i>=index&&item.saldo>0){
    result={...result,data:addOneMonthSameDay(item.data)};
-  }else if(kind==="juros"&&d.tipo==="semanal"&&i>=index&&item.saldo>0){
-   result={...result,data:addDays(item.data,7)};
   }
   return result;
  });
