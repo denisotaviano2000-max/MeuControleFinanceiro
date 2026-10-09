@@ -564,7 +564,6 @@ $("backToDebts").addEventListener("click",()=>{
  window.scrollTo({top:0,behavior:"smooth"});
 });
 
-
 function renderDebtDetail(){
  const d=debts.find(x=>Number(x.id)===Number(selectedDebtId));
  if(!d)return;
@@ -669,14 +668,12 @@ function renderDebtDetail(){
    <div class="actions">
      <button type="button" class="btn secondary smallbtn"
        onclick="showDebtHistory(${Number(d.id)})">
-       Ver histórico de pagamentos
+       Ver histórico geral de pagamentos
      </button>
    </div>
 
  </div>`;
 }
-
-
 
 async function editDebt(id){
  const d=debts.find(x=>Number(x.id)===Number(id));
@@ -702,56 +699,33 @@ async function editDebt(id){
   {v:6,n:"Sábado"}
  ];
 
- const fullyPaid=p=>
-  p.paga===true||Number(p.saldo)<=0;
-
- const paidPositions=original
-  .map((p,i)=>({p,i}))
-  .filter(x=>fullyPaid(x.p));
-
+ const fullyPaid=p=>p.paga===true||Number(p.saldo)<=0;
+ const paidPositions=original.map((p,i)=>({p,i})).filter(x=>fullyPaid(x.p));
  const paidCount=paidPositions.length;
- const maxPaidPosition=paidPositions.reduce(
-  (max,x)=>Math.max(max,Number(x.p.numero)||x.i+1),0
- );
+ const maxPaidPosition=paidPositions.reduce((max,x)=>Math.max(max,Number(x.p.numero)||x.i+1),0);
 
  const first=original[0]||{};
  const firstPending=original.find(p=>!fullyPaid(p));
 
  const getInitialDays=()=>{
-  const source=
-   original.find(p=>Array.isArray(p.dias_semana)&&p.dias_semana.length)
-    ?.dias_semana;
+  const source=original.find(p=>Array.isArray(p.dias_semana)&&p.dias_semana.length)?.dias_semana;
   if(source)return source.map(Number);
   return dayNames.map(x=>x.v);
  };
 
  const initialDays=getInitialDays();
- const initialWeekday=Number(
-  first.dia_semana??d.dia_semana??6
- );
- const initialMonthDay=Number(
-  first.dia_mes??d.dia_mes??5
- );
+ const initialWeekday=Number(first.dia_semana??d.dia_semana??6);
+ const initialMonthDay=Number(first.dia_mes??d.dia_mes??5);
 
  let oldModal=document.getElementById("editDebtFullModal");
  if(oldModal)oldModal.remove();
 
  const modal=document.createElement("div");
  modal.id="editDebtFullModal";
- modal.style.cssText=[
-  "position:fixed","inset:0","z-index:99999",
-  "background:rgba(0,0,0,.8)","display:flex",
-  "align-items:center","justify-content:center",
-  "padding:14px","box-sizing:border-box"
- ].join(";");
+ modal.style.cssText="position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;padding:14px;box-sizing:border-box";
 
  const card=document.createElement("div");
- card.style.cssText=[
-  "width:100%","max-width:720px","max-height:94vh",
-  "overflow:auto","padding:22px","box-sizing:border-box",
-  "border-radius:16px","background:var(--panel,#172033)",
-  "color:var(--text,#fff)","border:1px solid var(--border,#334155)"
- ].join(";");
+ card.style.cssText="width:100%;max-width:720px;max-height:94vh;overflow:auto;padding:22px;box-sizing:border-box;border-radius:16px;background:var(--panel,#172033);color:var(--text,#fff);border:1px solid var(--border,#334155)";
 
  card.innerHTML=`
   <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
@@ -761,12 +735,10 @@ async function editDebt(id){
 
   <form id="editFullForm">
    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
-
     <div class="field">
      <label for="editFullName">Nome da pessoa ou credor</label>
      <input id="editFullName" required>
     </div>
-
     <div class="field">
      <label for="editFullType">Tipo de cobrança</label>
      <select id="editFullType">
@@ -775,45 +747,36 @@ async function editDebt(id){
       <option value="diaria">Diária</option>
      </select>
     </div>
-
     <div class="field">
      <label for="editFullInstallment">Valor de cada parcela (R$)</label>
      <input id="editFullInstallment" type="number" min="0.01" step="0.01" required>
     </div>
-
     <div class="field">
      <label for="editFullCount">Quantidade total de parcelas</label>
      <input id="editFullCount" type="number" min="1" step="1" required>
     </div>
-
     <div class="field">
      <label for="editFullStart">Data inicial da cobrança</label>
      <input id="editFullStart" type="date" required>
     </div>
-
     <div class="field">
      <label for="editFullTotal">Valor total calculado (R$)</label>
      <input id="editFullTotal" type="number" readonly>
     </div>
-
     <div class="field" id="editFullWeekdayField">
      <label for="editFullWeekday">Dia da semana para pagar</label>
      <select id="editFullWeekday"></select>
     </div>
-
     <div class="field" id="editFullMonthdayField">
      <label for="editFullMonthday">Dia do mês para pagar</label>
      <select id="editFullMonthday"></select>
     </div>
-
     <div class="field" id="editFullDaysField" style="grid-column:1/-1">
      <label>Dias da semana para cobrança diária</label>
      <div id="editFullDays" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px"></div>
     </div>
    </div>
-
    <p id="editFullInfo" class="muted small"></p>
-
    <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:20px">
     <button type="button" id="editFullCancel" class="btn secondary">Cancelar</button>
     <button type="submit" id="editFullSave" class="btn">Salvar alterações</button>
@@ -831,8 +794,7 @@ async function editDebt(id){
  $e("editFullType").value=d.tipo||"mensal";
  $e("editFullInstallment").value=Number(d.valor_parcela??first.valor??0);
  $e("editFullCount").value=original.length||1;
- $e("editFullStart").value=
-  d.data_inicio||firstPending?.data||first.data||today();
+ $e("editFullStart").value=d.data_inicio||firstPending?.data||first.data||today();
 
  weekdayNames.forEach(x=>{
   const opt=document.createElement("option");
@@ -862,9 +824,7 @@ async function editDebt(id){
   $e("editFullDays").appendChild(label);
  });
 
- const selectedDays=()=>Array.from(
-  document.querySelectorAll(".edit-full-day:checked")
- ).map(x=>Number(x.value));
+ const selectedDays=()=>Array.from(document.querySelectorAll(".edit-full-day:checked")).map(x=>Number(x.value));
 
  const updateTotal=()=>{
   const amount=Number($e("editFullInstallment").value)||0;
@@ -885,21 +845,16 @@ async function editDebt(id){
  $e("editFullClose").onclick=close;
  $e("editFullCancel").onclick=close;
 
- modal.addEventListener("click",e=>{
-  if(e.target===modal)close();
- });
+ modal.addEventListener("click",e=>{if(e.target===modal)close()});
 
  updateTotal();
  updateFields();
 
  const info=$e("editFullInfo");
- info.textContent=
-  paidCount+" parcela(s) totalmente paga(s) serão preservadas, junto com seu histórico. "+
-  "Parcelas pendentes serão recalculadas conforme os novos dados.";
+ info.textContent=paidCount+" parcela(s) totalmente paga(s) serão preservadas, junto com seu histórico. Parcelas pendentes serão recalculadas conforme os novos dados.";
 
  $e("editFullForm").addEventListener("submit",async e=>{
   e.preventDefault();
-
   const save=$e("editFullSave");
   const name=$e("editFullName").value.trim();
   const type=$e("editFullType").value;
@@ -910,47 +865,33 @@ async function editDebt(id){
   const monthDay=Number($e("editFullMonthday").value);
   const days=selectedDays();
 
-  if(!name||!start||!Number.isFinite(installment)||installment<=0||
-     !Number.isInteger(count)||count<1){
+  if(!name||!start||!Number.isFinite(installment)||installment<=0||!Number.isInteger(count)||count<1){
    alert("Confira o nome, a data, o valor da parcela e a quantidade.");
    return;
   }
-
   if(type==="diaria"&&!days.length){
    alert("Marque pelo menos um dia da semana.");
    return;
   }
-
   if(count<maxPaidPosition){
    alert("A quantidade de parcelas não pode ser menor que a posição da última parcela já paga ("+maxPaidPosition+").");
    return;
   }
 
-  const duplicate=debts.some(x=>
-   Number(x.id)!==Number(id)&&
-   String(x.nome).trim().toLocaleLowerCase("pt-BR")===
-   name.toLocaleLowerCase("pt-BR")
-  );
+  const duplicate=debts.some(x=>Number(x.id)!==Number(id)&&String(x.nome).trim().toLocaleLowerCase("pt-BR")===name.toLocaleLowerCase("pt-BR"));
   if(duplicate){
    alert("Já existe outra dívida com esse nome.");
    return;
   }
 
-  const confirmed=confirm(
-   "Salvar as alterações desta dívida?\n\n"+
-   "As parcelas totalmente pagas e seus históricos serão preservados. "+
-   "Os valores e vencimentos das parcelas pendentes serão recalculados."
-  );
-  if(!confirmed)return;
+  if(!confirm("Salvar as alterações desta dívida?\n\nAs parcelas totalmente pagas e seus históricos serão preservados. Os valores e vencimentos das parcelas pendentes serão recalculados."))return;
 
-  // Preserva cada parcela totalmente paga em sua posição original.
   const paidAt=new Map();
   paidPositions.forEach(({p,i})=>{
    const position=Math.max(0,(Number(p.numero)||i+1)-1);
    paidAt.set(position,p);
   });
 
-  // Reaproveita o histórico e os pagamentos parciais das parcelas pendentes.
   const oldPending=original.filter(p=>!fullyPaid(p));
   let pendingCursor=0;
   const newParcels=[];
@@ -961,12 +902,9 @@ async function editDebt(id){
      newParcels.push(paidAt.get(i));
      continue;
     }
-
     const old=oldPending[pendingCursor++]||null;
     const oldValue=old?Number(old.valor)||0:0;
     const oldBalance=old?Number(old.saldo)||0:0;
-
-    // Valor do principal já amortizado na parcela.
     const principalPaid=old?Math.max(0,oldValue-oldBalance):0;
     const balance=Number(Math.max(0,installment-principalPaid).toFixed(2));
 
@@ -976,16 +914,10 @@ async function editDebt(id){
      valor:installment,
      saldo:balance,
      paga:balance<=0,
-     data:dueDate(
-      start,type,i,weekday,monthDay,
-      type==="diaria"?days:null
-     ),
-     historico:old
-      ?(Array.isArray(old.historico)?old.historico:[])
-      :[]
+     data:dueDate(start,type,i,weekday,monthDay,type==="diaria"?days:null),
+     historico:old?(Array.isArray(old.historico)?old.historico:[]):[]
     };
 
-    // Atualiza os dados de programação de acordo com o novo tipo.
     delete parcel.dias_semana;
     delete parcel.dia_semana;
     delete parcel.dia_mes;
@@ -998,24 +930,14 @@ async function editDebt(id){
    }
 
    const total=Number((installment*count).toFixed(2));
-   const daysValue=
-    type==="diaria"?days.length:
-    type==="semanal"?7:30;
+   const daysValue=type==="diaria"?days.length:type==="semanal"?7:30;
 
    save.disabled=true;
    save.textContent="Salvando...";
 
    const {error}=await supabaseClient
     .from("dividas")
-    .update({
-     nome:name,
-     tipo:type,
-     valor_parcela:installment,
-     valor_total:total,
-     data_inicio:start,
-     dias:daysValue,
-     parcelas:newParcels
-    })
+    .update({nome:name,tipo:type,valor_parcela:installment,valor_total:total,data_inicio:start,dias:daysValue,parcelas:newParcels})
     .eq("id",id)
     .eq("user_id",currentUser.id);
 
@@ -1024,7 +946,6 @@ async function editDebt(id){
    close();
    await carregarDados();
    alert("Dívida atualizada com sucesso!");
-
   }catch(err){
    console.error("Erro ao editar dívida:",err);
    alert("Não foi possível salvar as alterações: "+(err.message||err));
@@ -1035,7 +956,6 @@ async function editDebt(id){
 
  $e("editFullName").focus();
 }
-
 
 $("debtForm").addEventListener("submit",async e=>{
  e.preventDefault();
@@ -1139,160 +1059,272 @@ async function increaseInstallments(id){
  try{await saveDebt(d,replanned)}catch(err){alert("Erro ao alterar parcelas: "+err.message)}
 }
 
+async function showHistory(id, index) {
+  const d = debts.find(x => Number(x.id) === Number(id));
+  if (!d) return;
 
+  const parcels = parseParcels(d);
+  const p = parcels[index];
+  if (!p) return;
 
+  let h = historyOf(p);
 
-async function showHistory(id,index){
- const d=debts.find(x=>Number(x.id)===Number(id));
- if(!d)return;
+  if (!h.length) {
+    alert("Nenhum pagamento registrado nesta parcela.");
+    return;
+  }
 
- const parcels=parseParcels(d);
- const p=parcels[index];
- if(!p)return;
+  let oldModal = document.getElementById("historyModal");
+  if (oldModal) oldModal.remove();
 
- const h=historyOf(p);
+  const modal = document.createElement("div");
+  modal.id = "historyModal";
+  modal.style.cssText = "position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;padding:14px;box-sizing:border-box";
 
- if(!h.length){
-  alert("Nenhum pagamento registrado nesta parcela.");
-  return;
- }
+  const card = document.createElement("div");
+  card.style.cssText = "width:100%;max-width:550px;max-height:90vh;overflow:auto;padding:22px;box-sizing:border-box;border-radius:16px;background:var(--panel,#172033);color:var(--text,#fff);border:1px solid var(--border,#334155)";
 
- const list=h.map((x,i)=>
-  (i+1)+". "+dateBR(x.data)+
-  " — "+x.tipo+": "+money(x.valor||0)
- ).join("\n");
+  const renderHistoryContent = () => {
+    let rowsHtml = h.map((item, itemIdx) => `
+      <tr style="border-bottom:1px solid var(--border,#26364c)">
+        <td style="padding:10px">${dateBR(item.data)}</td>
+        <td style="padding:10px">${esc(item.tipo)}</td>
+        <td style="padding:10px">${money(item.valor || 0)}</td>
+        <td style="padding:10px;text-align:right">
+          <button type="button" class="btn secondary smallbtn" onclick="editHistoryItem(${id}, ${index}, ${itemIdx})">Editar</button>
+          <button type="button" class="btn danger smallbtn" onclick="deleteHistoryItem(${id}, ${index}, ${itemIdx})">Excluir</button>
+        </td>
+      </tr>
+    `).join("");
 
- const choice=prompt(
-  "HISTÓRICO DE PAGAMENTOS\n\n"+list+
-  "\n\nDigite o número do pagamento que deseja EDITAR.\nDigite 0 para cancelar."
- );
-
- if(choice===null||choice.trim()==="")return;
-
- const selected=Number(choice);
- if(selected===0)return;
-
- if(!Number.isInteger(selected)||selected<1||selected>h.length){
-  alert("Número de pagamento inválido.");
-  return;
- }
-
- const payment=h[selected-1];
-
- // Seleciona o novo tipo do pagamento.
- const typeChoice=prompt(
-  "EDITAR PAGAMENTO Nº "+selected+
-  "\n\nTipo atual: "+payment.tipo+
-  "\n\nDigite o número do novo tipo:"+
-  "\n1 - Parcial"+
-  "\n2 - Só juros"+
-  "\n3 - Quitação"+
-  "\n\nDigite 0 para cancelar."
- );
-
- if(typeChoice===null||typeChoice==="0")return;
-
- const typeMap={
-  "1":"parcial",
-  "2":"juros",
-  "3":"quitar"
- };
-
- const newType=typeMap[typeChoice.trim()];
-
- if(!newType){
-  alert("Tipo inválido. Escolha 1, 2 ou 3.");
-  return;
- }
-
- const answer=prompt(
-  "EDITAR VALOR DO PAGAMENTO"+
-  "\n\nTipo: "+newType+
-  "\nValor atual: "+money(payment.valor||0)+
-  "\n\nDigite o valor correto em reais:"
- );
-
- if(answer===null)return;
-
- const newAmount=Number(parseMoney(answer).toFixed(2));
-
- if(!Number.isFinite(newAmount)||newAmount<=0){
-  alert("Informe um valor válido maior que zero.");
-  return;
- }
-
- const originalValue=Math.max(0,Number(p.valor)||0);
-
- // Monta o histórico corrigido, preservando os outros registros.
- const newHistory=h.map((item,i)=>{
-  if(i!==selected-1)return {...item};
-
-  return {
-   ...item,
-   tipo:newType,
-   valor:newAmount,
-   observacao:newType==="juros"
-    ?"Juros pagos; saldo principal mantido"
-    :""
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3 style="margin:0">Histórico - Parcela ${p.numero} (${esc(d.nome)})</h3>
+        <button type="button" id="closeHistoryModal" class="btn secondary smallbtn">Fechar</button>
+      </div>
+      <div class="table-wrap">
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead>
+            <tr style="text-align:left;color:var(--muted)">
+              <th style="padding:8px">Data</th>
+              <th style="padding:8px">Tipo</th>
+              <th style="padding:8px">Valor</th>
+              <th style="padding:8px;text-align:right">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+      </div>
+    `;
   };
- });
 
- // Pagamentos de juros não reduzem o principal.
- const principalPaid=Number(newHistory.reduce((sum,item)=>{
-  const type=String(item.tipo||"").toLowerCase();
+  renderHistoryContent();
+  modal.appendChild(card);
+  document.body.appendChild(modal);
 
-  if(type==="juros")return sum;
-
-  return sum+Math.max(0,Number(item.valor)||0);
- },0).toFixed(2));
-
- const newBalance=Number(
-  Math.max(0,originalValue-principalPaid).toFixed(2)
- );
-
- if(!confirm(
-  "Confirma corrigir o pagamento nº "+selected+"?"+
-  "\n\nTipo anterior: "+payment.tipo+
-  "\nNovo tipo: "+newType+
-  "\nValor anterior: "+money(payment.valor||0)+
-  "\nNovo valor: "+money(newAmount)+
-  "\nSaldo recalculado: "+money(newBalance)
- ))return;
-
- const updated=parcels.map((item,i)=>{
-  if(i!==index)return item;
-
-  return {
-   ...item,
-   historico:newHistory,
-   saldo:newBalance,
-   paga:newBalance<=0
-  };
- });
-
- try{
-  await saveDebt(d,updated);
-  await carregarDados();
-
-  alert(
-   "Pagamento corrigido com sucesso!"+
-   "\n\nNovo tipo: "+newType+
-   "\nNovo valor: "+money(newAmount)+
-   "\nSaldo da parcela: "+money(newBalance)
-  );
- }catch(err){
-  alert("Erro ao corrigir pagamento: "+err.message);
- }
+  const closeBtn = document.getElementById("closeHistoryModal");
+  if (closeBtn) closeBtn.onclick = () => modal.remove();
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
 }
 
+async function editHistoryItem(debtId, parcelIndex, itemIndex) {
+  const d = debts.find(x => Number(x.id) === Number(debtId));
+  if (!d) return;
 
+  const parcels = parseParcels(d);
+  const p = parcels[parcelIndex];
+  if (!p) return;
+
+  const h = historyOf(p);
+  const item = h[itemIndex];
+  if (!item) return;
+
+  const typeChoice = prompt(
+    "EDITAR PAGAMENTO Nº " + (itemIndex + 1) +
+    "\n\nTipo atual: " + item.tipo +
+    "\nValor atual: " + money(item.valor || 0) +
+    "\n\nEscolha o novo tipo:" +
+    "\n1 - Parcial" +
+    "\n2 - Só juros" +
+    "\n3 - Quitação" +
+    "\n\nDigite 0 para cancelar."
+  );
+
+  if (typeChoice === null || typeChoice.trim() === "0") return;
+
+  const types = { "1": "parcial", "2": "juros", "3": "quitar" };
+  const newType = types[typeChoice.trim()];
+  if (!newType) {
+    alert("Opção inválida. Digite 1, 2 ou 3.");
+    return;
+  }
+
+  const answer = prompt(
+    "Digite o novo valor do pagamento (R$):",
+    String(item.valor || 0).replace(".", ",")
+  );
+
+  if (answer === null) return;
+
+  const newAmount = Number(parseMoney(answer).toFixed(2));
+  if (!Number.isFinite(newAmount) || newAmount <= 0) {
+    alert("Informe um valor válido maior que zero.");
+    return;
+  }
+
+  const newDate = prompt("Data do pagamento (AAAA-MM-DD):", String(item.data || today()).slice(0, 10));
+
+  const newHistory = h.map((hist, i) => {
+    if (i !== itemIndex) return hist;
+    return {
+      ...hist,
+      tipo: newType,
+      valor: newAmount,
+      data: (newDate && /^\d{4}-\d{2}-\d{2}$/.test(newDate)) ? newDate : hist.data,
+      observacao: newType === "juros" ? "Juros pagos; saldo principal mantido" : ""
+    };
+  });
+
+  const originalValue = Math.max(0, Number(p.valor) || 0);
+  const principalPaid = newHistory.reduce((sum, hist) => {
+    if (String(hist.tipo || "").toLowerCase() === "juros") return sum;
+    return sum + Math.max(0, Number(hist.valor) || 0);
+  }, 0);
+
+  const newBalance = Number(Math.max(0, originalValue - principalPaid).toFixed(2));
+
+  const updated = parcels.map((itemP, i) => {
+    if (i !== parcelIndex) return itemP;
+    return {
+      ...itemP,
+      historico: newHistory,
+      saldo: newBalance,
+      paga: newBalance <= 0
+    };
+  });
+
+  try {
+    await saveDebt(d, updated);
+    let modal = document.getElementById("historyModal");
+    if (modal) modal.remove();
+    renderDebtDetail();
+  } catch (err) {
+    alert("Erro ao salvar histórico: " + err.message);
+  }
+}
+
+async function deleteHistoryItem(debtId, parcelIndex, itemIndex) {
+  if (!confirm("Deseja realmente remover este pagamento do histórico?")) return;
+
+  const d = debts.find(x => Number(x.id) === Number(debtId));
+  if (!d) return;
+
+  const parcels = parseParcels(d);
+  const p = parcels[parcelIndex];
+  if (!p) return;
+
+  const h = historyOf(p);
+  const newHistory = h.filter((_, i) => i !== itemIndex);
+
+  const originalValue = Math.max(0, Number(p.valor) || 0);
+  const principalPaid = newHistory.reduce((sum, hist) => {
+    if (String(hist.tipo || "").toLowerCase() === "juros") return sum;
+    return sum + Math.max(0, Number(hist.valor) || 0);
+  }, 0);
+
+  const newBalance = Number(Math.max(0, originalValue - principalPaid).toFixed(2));
+
+  const updated = parcels.map((itemP, i) => {
+    if (i !== parcelIndex) return itemP;
+    return {
+      ...itemP,
+      historico: newHistory,
+      saldo: newBalance,
+      paga: newBalance <= 0
+    };
+  });
+
+  try {
+    await saveDebt(d, updated);
+    let modal = document.getElementById("historyModal");
+    if (modal) modal.remove();
+    renderDebtDetail();
+  } catch (err) {
+    alert("Erro ao excluir do histórico: " + err.message);
+  }
+}
 
 function showDebtHistory(id){
- const d=debts.find(x=>Number(x.id)===Number(id));
- if(!d)return;
- const all=parseParcels(d).flatMap(p=>historyOf(p).map(h=>({...h,numero:p.numero})));
- alert(all.length?all.map(x=>`Parcela ${x.numero} — ${dateBR(x.data)} — ${x.tipo}: ${money(x.valor||0)}${x.observacao?" ("+x.observacao+")":""}`).join("\n"):"Nenhum pagamento registrado.");
+  const d = debts.find(x => Number(x.id) === Number(id));
+  if (!d) return;
+  const parcels = parseParcels(d);
+  
+  let oldModal = document.getElementById("historyGeneralModal");
+  if (oldModal) oldModal.remove();
+
+  const modal = document.createElement("div");
+  modal.id = "historyGeneralModal";
+  modal.style.cssText = "position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;padding:14px;box-sizing:border-box";
+
+  const card = document.createElement("div");
+  card.style.cssText = "width:100%;max-width:650px;max-height:90vh;overflow:auto;padding:22px;box-sizing:border-box;border-radius:16px;background:var(--panel,#172033);color:var(--text,#fff);border:1px solid var(--border,#334155)";
+
+  let rowsHtml = "";
+  parcels.forEach((p, pIndex) => {
+    const h = historyOf(p);
+    h.forEach((item, itemIdx) => {
+      rowsHtml += `
+        <tr style="border-bottom:1px solid var(--border,#26364c)">
+          <td style="padding:10px">Parcela ${p.numero}</td>
+          <td style="padding:10px">${dateBR(item.data)}</td>
+          <td style="padding:10px">${esc(item.tipo)}</td>
+          <td style="padding:10px">${money(item.valor || 0)}</td>
+          <td style="padding:10px;text-align:right">
+            <button type="button" class="btn secondary smallbtn" onclick="editHistoryItem(${id}, ${pIndex}, ${itemIdx})">Editar</button>
+            <button type="button" class="btn danger smallbtn" onclick="deleteHistoryItem(${id}, ${pIndex}, ${itemIdx})">Excluir</button>
+          </td>
+        </tr>
+      `;
+    });
+  });
+
+  if (!rowsHtml) {
+    rowsHtml = `<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--muted)">Nenhum pagamento registrado nesta dívida.</td></tr>`;
+  }
+
+  card.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="margin:0">Histórico Geral - ${esc(d.nome)}</h3>
+      <button type="button" id="closeGeneralModal" class="btn secondary smallbtn">Fechar</button>
+    </div>
+    <div class="table-wrap">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="text-align:left;color:var(--muted)">
+            <th style="padding:8px">Parcela</th>
+            <th style="padding:8px">Data</th>
+            <th style="padding:8px">Tipo</th>
+            <th style="padding:8px">Valor</th>
+            <th style="padding:8px;text-align:right">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  modal.appendChild(card);
+  document.body.appendChild(modal);
+
+  const closeBtn = document.getElementById("closeGeneralModal");
+  if (closeBtn) closeBtn.onclick = () => modal.remove();
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
 }
+
 async function deleteDebt(id){
  const d=debts.find(x=>Number(x.id)===Number(id));
  if(!d)return;
