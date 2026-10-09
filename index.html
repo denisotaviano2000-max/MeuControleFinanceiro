@@ -998,10 +998,10 @@ async function payInstallment(debtId,index,kind){
 
  const tipoDivida=d.tipo||"mensal";
  const textJurosPrompt = tipoDivida==="diaria"
-  ? "Registrar "+money(amount)+" como juros pagos (a parcela ficará como Juros pagos e será adicionada +1 diária no final)?"
+  ? "Registrar "+money(amount)+" de juros pagos? (A parcela ficará como Juros pagos e será adicionada uma nova diária no final no valor de "+money(amount)+")"
   : tipoDivida==="semanal"
-  ? "Registrar "+money(amount)+" como juros pagos (a parcela ficará como Juros pagos e será adicionada +1 semana no final)?"
-  : "Registrar "+money(amount)+" como juros pagos (a parcela ficará como Juros pagos e será adicionada +1 mês no final)?";
+  ? "Registrar "+money(amount)+" de juros pagos? (A parcela ficará como Juros pagos e será adicionada uma nova semana no final no valor de "+money(amount)+")"
+  : "Registrar "+money(amount)+" de juros pagos? (A parcela ficará como Juros pagos e será adicionado um novo mês no final no valor de "+money(amount)+")";
 
  if(kind==="quitar"&&!confirm("Confirmar pagamento de "+money(amount)+" para quitar esta parcela?"))return;
  if(kind==="parcial"&&!confirm("Registrar pagamento parcial de "+money(amount)+"?"))return;
@@ -1033,18 +1033,19 @@ async function payInstallment(debtId,index,kind){
   }
 
   const newNum=updated.length+1;
-  const parcelVal=num(d.valor_parcela||p.valor);
+  const interestVal=Number(amount.toFixed(2));
 
+  // Adiciona a nova diária com o valor exato do juro pago, fazendo o total subir apenas o valor do juro
   updated.push({
    numero:newNum,
-   valor:parcelVal,
-   saldo:parcelVal,
+   valor:interestVal,
+   saldo:interestVal,
    paga:false,
    data:nextDate,
    ...(tipoDivida==="diaria"&&lastParcel.dias_semana?{dias_semana:lastParcel.dias_semana}:{}),
    ...(tipoDivida==="semanal"&&lastParcel.dia_semana!==undefined?{dia_semana:lastParcel.dia_semana}:{}),
    ...(tipoDivida==="mensal"&&lastParcel.dia_mes!==undefined?{dia_mes:lastParcel.dia_mes}:{}),
-   historico:[{tipo:"juros_extra",data:today(),observacao:"Adicionada por pagamento de juros"}]
+   historico:[{tipo:"juros_extra",data:today(),observacao:"Adicionada por pagamento de juros de "+money(interestVal)}]
   });
  }
 
