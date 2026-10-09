@@ -1139,12 +1139,154 @@ async function increaseInstallments(id){
  try{await saveDebt(d,replanned)}catch(err){alert("Erro ao alterar parcelas: "+err.message)}
 }
 
-function showHistory(id,index){
+
+
+
+async function showHistory(id,index){
  const d=debts.find(x=>Number(x.id)===Number(id));
  if(!d)return;
- const p=parseParcels(d)[index],h=historyOf(p);
- alert(h.length?h.map(x=>`${dateBR(x.data)} — ${x.tipo}: ${money(x.valor||0)}${x.observacao?" ("+x.observacao+")":""}`).join("\n"):"Nenhum pagamento registrado nesta parcela.");
+
+ const parcels=parseParcels(d);
+ const p=parcels[index];
+ if(!p)return;
+
+ const h=historyOf(p);
+
+ if(!h.length){
+  alert("Nenhum pagamento registrado nesta parcela.");
+  return;
+ }
+
+ const list=h.map((x,i)=>
+  (i+1)+". "+dateBR(x.data)+
+  " — "+x.tipo+": "+money(x.valor||0)
+ ).join("\n");
+
+ const choice=prompt(
+  "HISTÓRICO DE PAGAMENTOS\n\n"+list+
+  "\n\nDigite o número do pagamento que deseja EDITAR.\nDigite 0 para cancelar."
+ );
+
+ if(choice===null||choice.trim()==="")return;
+
+ const selected=Number(choice);
+ if(selected===0)return;
+
+ if(!Number.isInteger(selected)||selected<1||selected>h.length){
+  alert("Número de pagamento inválido.");
+  return;
+ }
+
+ const payment=h[selected-1];
+
+ // Seleciona o novo tipo do pagamento.
+ const typeChoice=prompt(
+  "EDITAR PAGAMENTO Nº "+selected+
+  "\n\nTipo atual: "+payment.tipo+
+  "\n\nDigite o número do novo tipo:"+
+  "\n1 - Parcial"+
+  "\n2 - Só juros"+
+  "\n3 - Quitação"+
+  "\n\nDigite 0 para cancelar."
+ );
+
+ if(typeChoice===null||typeChoice==="0")return;
+
+ const typeMap={
+  "1":"parcial",
+  "2":"juros",
+  "3":"quitar"
+ };
+
+ const newType=typeMap[typeChoice.trim()];
+
+ if(!newType){
+  alert("Tipo inválido. Escolha 1, 2 ou 3.");
+  return;
+ }
+
+ const answer=prompt(
+  "EDITAR VALOR DO PAGAMENTO"+
+  "\n\nTipo: "+newType+
+  "\nValor atual: "+money(payment.valor||0)+
+  "\n\nDigite o valor correto em reais:"
+ );
+
+ if(answer===null)return;
+
+ const newAmount=Number(parseMoney(answer).toFixed(2));
+
+ if(!Number.isFinite(newAmount)||newAmount<=0){
+  alert("Informe um valor válido maior que zero.");
+  return;
+ }
+
+ const originalValue=Math.max(0,Number(p.valor)||0);
+
+ // Monta o histórico corrigido, preservando os outros registros.
+ const newHistory=h.map((item,i)=>{
+  if(i!==selected-1)return {...item};
+
+  return {
+   ...item,
+   tipo:newType,
+   valor:newAmount,
+   observacao:newType==="juros"
+    ?"Juros pagos; saldo principal mantido"
+    :""
+  };
+ });
+
+ // Pagamentos de juros não reduzem o principal.
+ const principalPaid=Number(newHistory.reduce((sum,item)=>{
+  const type=String(item.tipo||"").toLowerCase();
+
+  if(type==="juros")return sum;
+
+  return sum+Math.max(0,Number(item.valor)||0);
+ },0).toFixed(2));
+
+ const newBalance=Number(
+  Math.max(0,originalValue-principalPaid).toFixed(2)
+ );
+
+ if(!confirm(
+  "Confirma corrigir o pagamento nº "+selected+"?"+
+  "\n\nTipo anterior: "+payment.tipo+
+  "\nNovo tipo: "+newType+
+  "\nValor anterior: "+money(payment.valor||0)+
+  "\nNovo valor: "+money(newAmount)+
+  "\nSaldo recalculado: "+money(newBalance)
+ ))return;
+
+ const updated=parcels.map((item,i)=>{
+  if(i!==index)return item;
+
+  return {
+   ...item,
+   historico:newHistory,
+   saldo:newBalance,
+   paga:newBalance<=0
+  };
+ });
+
+ try{
+  await saveDebt(d,updated);
+  await carregarDados();
+
+  alert(
+   "Pagamento corrigido com sucesso!"+
+   "\n\nNovo tipo: "+newType+
+   "\nNovo valor: "+money(newAmount)+
+   "\nSaldo da parcela: "+money(newBalance)
+  );
+ }catch(err){
+  alert("Erro ao corrigir pagamento: "+err.message);
+ }
 }
+
+
+
 function showDebtHistory(id){
  const d=debts.find(x=>Number(x.id)===Number(id));
  if(!d)return;
