@@ -889,7 +889,6 @@ async function editDebt(id){
 
   if(!confirm("Salvar as alterações desta dívida?\n\nO saldo devedor passará a ser as " + count + " parcelas de " + money(installment) + " a partir de " + dateBR(start) + "."))return;
 
-  // Cria um plano novo e limpo com apenas as parcelas a pagar a partir de agora
   const newParcels=[];
 
   try{
@@ -974,7 +973,8 @@ $("debtForm").addEventListener("submit",async e=>{
 $("refreshDebts").addEventListener("click",carregarDados);
 
 async function saveDebt(d,newParcels){
- const {error}=await supabaseClient.from("dividas").update({parcelas:newParcels}).eq("id",d.id).eq("user_id",currentUser.id);
+ const totalNew=newParcels.reduce((s,p)=>s+num(p.saldo),0);
+ const {error}=await supabaseClient.from("dividas").update({parcelas:newParcels,valor_total:Number((parseParcels(d).reduce((s,p)=>s+num(p.valor),0)).toFixed(2))}).eq("id",d.id).eq("user_id",currentUser.id);
  if(error)throw error;
  await carregarDados();
 }
@@ -993,11 +993,19 @@ async function payInstallment(debtId,index,kind){
   if(!Number.isFinite(amount)||amount<=0)return alert("Informe um valor válido maior que zero.");
   if(kind==="parcial"&&amount>p.saldo)return alert("O pagamento parcial não pode ser maior que o saldo da parcela.");
  }
+
+ const tipoDivida=d.tipo||"mensal";
+ const textJurosPrompt = tipoDivida==="diaria"
+  ? "Registrar "+money(amount)+" como juros pagos, mantendo o saldo da parcela, adiando os vencimentos e adicionando +1 diária no final?"
+  : tipoDivida==="semanal"
+  ? "Registrar "+money(amount)+" como juros pagos, mantendo o saldo da parcela, adiando os vencimentos em 1 semana e adicionando +1 semana de parcela no final?"
+  : "Registrar "+money(amount)+" como juros pagos, sem reduzir o saldo da parcela e adiando o vencimento das parcelas pendentes para o próximo mês?";
+
  if(kind==="quitar"&&!confirm("Confirmar pagamento de "+money(amount)+" para quitar esta parcela?"))return;
  if(kind==="parcial"&&!confirm("Registrar pagamento parcial de "+money(amount)+"?"))return;
- if(kind==="juros"&&!confirm("Registrar "+money(amount)+" como juros pagos, sem reduzir o saldo da parcela e adiando o vencimento das parcelas pendentes para o próximo mês?"))return;
+ if(kind==="juros"&&!confirm(textJurosPrompt))return;
 
- const updated=parcels.map((item,i)=>{
+ let updated=parcels.map((item,i)=>{
   let result={...item};
   if(i===index){
    const hist=[...historyOf(item),{tipo:kind==="juros"?"juros":kind==="parcial"?"parcial":"quitar",valor:Number(amount.toFixed(2)),data:today(),observacao:kind==="juros"?"Juros pagos; saldo principal mantido":""}];
@@ -1007,12 +1015,49 @@ async function payInstallment(debtId,index,kind){
     result={...item,saldo:newBalance,paga:newBalance<=0,historico:hist};
    }
   }
+  // Se for juros, adiamos o vencimento das parcelas pendentes a partir desta
   if(kind==="juros"&&i>=index&&item.saldo>0){
-   result={...result,data:addOneMonthSameDay(item.data)};
+   if(tipoDivida==="diaria"){
+    // Adiciona +1 dia útil ou dia seguinte
+    result={...result,data:addDays(item.data,1)};
+   }else if(tipoDivida==="semanal"){
+    // Adiciona +7 dias (1 semana)
+    result={...result,data:addDays(item.data,7)};
+   }else{
+    // Mensal
+    result={...result,data:addOneMonthSameDay(item.data)};
+   }
   }
   return result;
  });
- try{await saveDebt(d,updated)}catch(err){alert("Erro ao registrar pagamento: "+err.message)}
+
+ // Se for juros em diária ou semanal, adiciona +1 parcela no final
+ if(kind==="juros"&&(tipoDivida==="diaria"||tipoDivida==="semanal")){
+  const lastParcel=updated[updated.length-1];
+  const nextDate = tipoDivida==="diaria" ? addDays(lastParcel.data,1) : addDays(lastParcel.data,7);
+  const newNum=updated.length+1;
+  const parcelVal=num(d.valor_parcela||p.valor);
+
+  updated.push({
+   numero:newNum,
+   valor:parcelVal,
+   saldo:parcelVal,
+   paga:false,
+   data:nextDate,
+   historico:[{tipo:"juros_extra",data:today(),observacao:tipoDivida==="diaria"?"+1 diária adicionada por pagamento de juros":"+1 semana adicionada por pagamento de juros"}]
+  });
+
+  // Atualiza também o valor_total da dívida somando mais uma parcela
+  d.valor_total = Number((num(d.valor_total)+parcelVal).toFixed(2));
+ }
+
+ try{
+  await supabaseClient.from("dividas").update({
+   parcelas:updated,
+   valor_total:d.valor_total
+  }).eq("id",d.id).eq("user_id",currentUser.id);
+  await carregarDados();
+ }catch(err){alert("Erro ao registrar pagamento: "+err.message)}
 }
 
 async function increaseInstallments(id){
