@@ -704,28 +704,17 @@ async function editDebt(id){
 
  const original=parseParcels(d);
  const weekdayNames=[
-  {v:1,n:"Segunda-feira"},
-  {v:2,n:"Terça-feira"},
-  {v:3,n:"Quarta-feira"},
-  {v:4,n:"Quinta-feira"},
-  {v:5,n:"Sexta-feira"},
-  {v:6,n:"Sábado"},
-  {v:0,n:"Domingo"}
+  {v:1,n:"Segunda-feira"},{v:2,n:"Terça-feira"},{v:3,n:"Quarta-feira"},
+  {v:4,n:"Quinta-feira"},{v:5,n:"Sexta-feira"},{v:6,n:"Sábado"},{v:0,n:"Domingo"}
  ];
  const dayNames=[
-  {v:0,n:"Domingo"},
-  {v:1,n:"Segunda-feira"},
-  {v:2,n:"Terça-feira"},
-  {v:3,n:"Quarta-feira"},
-  {v:4,n:"Quinta-feira"},
-  {v:5,n:"Sexta-feira"},
-  {v:6,n:"Sábado"}
+  {v:0,n:"Domingo"},{v:1,n:"Segunda-feira"},{v:2,n:"Terça-feira"},
+  {v:3,n:"Quarta-feira"},{v:4,n:"Quinta-feira"},{v:5,n:"Sexta-feira"},{v:6,n:"Sábado"}
  ];
 
  const fullyPaid=p=>p.paga===true||Number(p.saldo)<=0;
  const paidPositions=original.map((p,i)=>({p,i})).filter(x=>fullyPaid(x.p));
  const paidCount=paidPositions.length;
- const maxPaidPosition=paidPositions.reduce((max,x)=>Math.max(max,Number(x.p.numero)||x.i+1),0);
 
  const first=original[0]||{};
  const firstPending=original.find(p=>!fullyPaid(p));
@@ -874,7 +863,7 @@ async function editDebt(id){
  updateFields();
 
  const info=$e("editFullInfo");
- info.textContent=paidCount+" parcela(s) totalmente paga(s) serão preservadas, junto com seu histórico. Parcelas pendentes serão recalculadas conforme os novos dados.";
+ info.textContent="As parcelas serão recalculadas para o novo valor (" + money(Number($e("editFullInstallment").value)||0) + ") e datas. O histórico de pagamentos anteriores continuará registrado.";
 
  $e("editFullForm").addEventListener("submit",async e=>{
   e.preventDefault();
@@ -896,10 +885,6 @@ async function editDebt(id){
    alert("Marque pelo menos um dia da semana.");
    return;
   }
-  if(count<maxPaidPosition){
-   alert("A quantidade de parcelas não pode ser menor que a posição da última parcela já paga ("+maxPaidPosition+").");
-   return;
-  }
 
   const duplicate=debts.some(x=>Number(x.id)!==Number(id)&&String(x.nome).trim().toLocaleLowerCase("pt-BR")===name.toLocaleLowerCase("pt-BR"));
   if(duplicate){
@@ -907,7 +892,7 @@ async function editDebt(id){
    return;
   }
 
-  if(!confirm("Salvar as alterações desta dívida?\n\nAs parcelas totalmente pagas e seus históricos serão preservados. Os valores e vencimentos das parcelas pendentes serão recalculados."))return;
+  if(!confirm("Salvar as alterações desta dívida?\n\nTodas as parcelas serão ajustadas para R$ " + installment.toFixed(2) + " nas novas datas semanais. O histórico de pagamentos será preservado."))return;
 
   const paidAt=new Map();
   paidPositions.forEach(({p,i})=>{
@@ -921,10 +906,23 @@ async function editDebt(id){
 
   try{
    for(let i=0;i<count;i++){
+    const newDueDate = dueDate(start,type,i,weekday,monthDay,type==="diaria"?days:null);
+    
     if(paidAt.has(i)){
-     newParcels.push(paidAt.get(i));
+     // Atualiza a parcela paga para ter o novo valor de parcela e nova data semanal, mantendo o saldo zerado e o histórico
+     const oldPaid = paidAt.get(i);
+     newParcels.push({
+       ...oldPaid,
+       numero: i + 1,
+       valor: installment,
+       saldo: 0,
+       paga: true,
+       data: newDueDate,
+       historico: Array.isArray(oldPaid.historico) ? oldPaid.historico : []
+     });
      continue;
     }
+
     const old=oldPending[pendingCursor++]||null;
     const oldValue=old?Number(old.valor)||0:0;
     const oldBalance=old?Number(old.saldo)||0:0;
@@ -937,7 +935,7 @@ async function editDebt(id){
      valor:installment,
      saldo:balance,
      paga:balance<=0,
-     data:dueDate(start,type,i,weekday,monthDay,type==="diaria"?days:null),
+     data:newDueDate,
      historico:old?(Array.isArray(old.historico)?old.historico:[]):[]
     };
 
