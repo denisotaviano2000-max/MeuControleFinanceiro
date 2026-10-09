@@ -712,12 +712,7 @@ async function editDebt(id){
   {v:3,n:"Quarta-feira"},{v:4,n:"Quinta-feira"},{v:5,n:"Sexta-feira"},{v:6,n:"Sábado"}
  ];
 
- const fullyPaid=p=>p.paga===true||Number(p.saldo)<=0;
- const paidPositions=original.map((p,i)=>({p,i})).filter(x=>fullyPaid(x.p));
- const paidCount=paidPositions.length;
-
  const first=original[0]||{};
- const firstPending=original.find(p=>!fullyPaid(p));
 
  const getInitialDays=()=>{
   const source=original.find(p=>Array.isArray(p.dias_semana)&&p.dias_semana.length)?.dias_semana;
@@ -806,7 +801,7 @@ async function editDebt(id){
  $e("editFullType").value=d.tipo||"mensal";
  $e("editFullInstallment").value=Number(d.valor_parcela??first.valor??0);
  $e("editFullCount").value=original.length||1;
- $e("editFullStart").value=d.data_inicio||firstPending?.data||first.data||today();
+ $e("editFullStart").value=d.data_inicio||first.data||today();
 
  weekdayNames.forEach(x=>{
   const opt=document.createElement("option");
@@ -863,7 +858,7 @@ async function editDebt(id){
  updateFields();
 
  const info=$e("editFullInfo");
- info.textContent="As parcelas serão recalculadas para o novo valor (" + money(Number($e("editFullInstallment").value)||0) + ") e datas. O histórico de pagamentos anteriores continuará registrado.";
+ info.textContent="Cria um novo plano de cobrança a partir da data informada. O saldo devedor corresponderá exatamente ao novo plano.";
 
  $e("editFullForm").addEventListener("submit",async e=>{
   e.preventDefault();
@@ -892,56 +887,23 @@ async function editDebt(id){
    return;
   }
 
-  if(!confirm("Salvar as alterações desta dívida?\n\nTodas as parcelas serão ajustadas para R$ " + installment.toFixed(2) + " nas novas datas semanais. O histórico de pagamentos será preservado."))return;
+  if(!confirm("Salvar as alterações desta dívida?\n\nO saldo devedor passará a ser as " + count + " parcelas de " + money(installment) + " a partir de " + dateBR(start) + "."))return;
 
-  const paidAt=new Map();
-  paidPositions.forEach(({p,i})=>{
-   const position=Math.max(0,(Number(p.numero)||i+1)-1);
-   paidAt.set(position,p);
-  });
-
-  const oldPending=original.filter(p=>!fullyPaid(p));
-  let pendingCursor=0;
+  // Cria um plano novo e limpo com apenas as parcelas a pagar a partir de agora
   const newParcels=[];
 
   try{
    for(let i=0;i<count;i++){
     const newDueDate = dueDate(start,type,i,weekday,monthDay,type==="diaria"?days:null);
-    
-    if(paidAt.has(i)){
-     // Atualiza a parcela paga para ter o novo valor de parcela e nova data semanal, mantendo o saldo zerado e o histórico
-     const oldPaid = paidAt.get(i);
-     newParcels.push({
-       ...oldPaid,
-       numero: i + 1,
-       valor: installment,
-       saldo: 0,
-       paga: true,
-       data: newDueDate,
-       historico: Array.isArray(oldPaid.historico) ? oldPaid.historico : []
-     });
-     continue;
-    }
-
-    const old=oldPending[pendingCursor++]||null;
-    const oldValue=old?Number(old.valor)||0:0;
-    const oldBalance=old?Number(old.saldo)||0:0;
-    const principalPaid=old?Math.max(0,oldValue-oldBalance):0;
-    const balance=Number(Math.max(0,installment-principalPaid).toFixed(2));
 
     const parcel={
-     ...(old||{}),
      numero:i+1,
      valor:installment,
-     saldo:balance,
-     paga:balance<=0,
+     saldo:installment,
+     paga:false,
      data:newDueDate,
-     historico:old?(Array.isArray(old.historico)?old.historico:[]):[]
+     historico:[]
     };
-
-    delete parcel.dias_semana;
-    delete parcel.dia_semana;
-    delete parcel.dia_mes;
 
     if(type==="diaria")parcel.dias_semana=days;
     if(type==="semanal")parcel.dia_semana=weekday;
@@ -966,7 +928,7 @@ async function editDebt(id){
 
    close();
    await carregarDados();
-   alert("Dívida atualizada com sucesso!");
+   alert("Dívida redefinida com sucesso!");
   }catch(err){
    console.error("Erro ao editar dívida:",err);
    alert("Não foi possível salvar as alterações: "+(err.message||err));
