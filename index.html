@@ -975,7 +975,8 @@ $("debtForm").addEventListener("submit",async e=>{
 $("refreshDebts").addEventListener("click",carregarDados);
 
 async function saveDebt(d,newParcels){
- const totalNew=newParcels.reduce((s,p)=>s+num(p.valor),0);
+ // Soma o valor original de todas as parcelas atuais para recalcular o novo valor total corretamente
+ const totalNew = newParcels.reduce((s, p) => s + num(p.valor), 0);
  const {error}=await supabaseClient.from("dividas").update({parcelas:newParcels,valor_total:Number(totalNew.toFixed(2))}).eq("id",d.id).eq("user_id",currentUser.id);
  if(error)throw error;
  await carregarDados();
@@ -1035,7 +1036,7 @@ async function payInstallment(debtId,index,kind){
   const newNum=updated.length+1;
   const interestVal=Number(amount.toFixed(2));
 
-  // Adiciona a nova diária com o valor exato do juro pago, fazendo o total subir apenas o valor do juro
+  // Adiciona a nova parcela no final com o valor exato do juro pago
   updated.push({
    numero:newNum,
    valor:interestVal,
