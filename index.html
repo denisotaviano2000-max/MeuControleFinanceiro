@@ -3,153 +3,261 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Meu Controle Financeiro</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <style>
+:root{--bg:#0b1120;--panel:#111b2e;--panel2:#18253a;--border:#26364c;--text:#edf4ff;--muted:#91a3bb;--green:#34d399;--red:#fb7185;--blue:#60a5fa;--yellow:#fbbf24}
 *{box-sizing:border-box}
-body{font-family:Arial,sans-serif;background:#f2f4f7;margin:0;padding:16px;color:#222}
-h1{text-align:center}
-button{padding:11px 12px;border:0;border-radius:6px;color:white;cursor:pointer;font-size:14px;margin:3px}
-input,select{width:100%;padding:12px;margin:6px 0 12px;border:1px solid #ccc;border-radius:6px;font-size:16px}
-.oculto{display:none!important}
-#telaLogin{max-width:420px;margin:60px auto}
-.login-box,.formulario,.card{background:white;padding:20px;border-radius:10px;box-shadow:0 2px 8px #0001}
-.login-box{padding:30px}
-.btn-login{background:#0d6efd;width:100%;margin-top:10px}
-#mensagemLogin{text-align:center;margin-top:12px;overflow-wrap:anywhere}
-.topo{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-.topo h1{text-align:left}
-.btn-sair{background:#6c757d}
-.resumo{display:flex;gap:12px;flex-wrap:wrap;margin:20px 0}
-.card{flex:1;min-width:140px}
-.card p{font-size:20px;font-weight:bold}
-.formulario{margin-bottom:20px}
-.btn-entrada{background:#198754;width:100%}
-.btn-saida{background:#dc3545;width:100%}
-.btn-pagar{background:#198754}
-.btn-parcial{background:#0d6efd}
-.btn-juros{background:#7952b3}
-.btn-aumentar{background:#fd7e14}
-.btn-excluir{background:#dc3545;width:100%}
-.btn-editar{background:#6c757d}
-.dias{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:15px}
-.dia{background:#eee;padding:9px;border-radius:6px}
-.dia input{width:auto;margin:0 5px 0 0}
-.divida{background:white;border:1px solid #ddd;border-radius:10px;margin-bottom:15px;overflow:hidden}
-.cabecalho-divida{padding:16px;cursor:pointer}
-.parcela{padding:14px;border-top:1px solid #ddd;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-.parcela.paga{background:#e9f7ef}
-.parcela.atrasada{background:#ffe5e5}
-.parcela.hoje{background:#fff3cd}
-.parcela.futura{background:#eaf3ff}
-.info-parcela{line-height:1.7;flex:1;min-width:200px}
-.acoes-parcela{display:flex;gap:4px;flex-wrap:wrap}
-.status-paga{color:#198754;font-weight:bold}
-.status-atrasada{color:#dc3545;font-weight:bold}
-.status-hoje{color:#a87900;font-weight:bold}
-.status-futura{color:#0d6efd;font-weight:bold}
-.movimentacao{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px;border-bottom:1px solid #ddd;flex-wrap:wrap}
-.mov-entrada{color:#198754;font-weight:bold}
-.mov-saida{color:#dc3545;font-weight:bold}
-.btn-excluir-mov{background:#dc3545}
-.usuario{font-size:14px;color:#666;overflow-wrap:anywhere}
-.aviso{background:#fff3cd;padding:12px;border-radius:8px;line-height:1.5;margin:15px 0}
-.historico-pagamentos{font-size:12px;color:#555;margin-top:8px;overflow-wrap:anywhere}
-.acoes-divida{padding:12px;display:flex;flex-wrap:wrap;gap:6px}
-.acoes-divida button{flex:1}
-@media(max-width:600px){body{padding:10px}.card{min-width:125px}.parcela{align-items:flex-start}.acoes-parcela{width:100%}.acoes-parcela button{flex:1}}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.app{display:flex;min-height:100vh}
+.sidebar{width:245px;background:#0d1728;border-right:1px solid var(--border);padding:24px 15px;position:fixed;inset:0 auto 0 0;display:flex;flex-direction:column;z-index:10}
+.brand{display:flex;align-items:center;gap:12px;padding:5px 9px 26px}
+.brand-icon{background:#123d34;color:var(--green);width:43px;height:43px;border-radius:13px;display:grid;place-items:center;font-size:23px}
+.brand h2{font-size:17px;margin:0 0 5px}
+.brand small{color:var(--muted);font-size:10px;letter-spacing:1px}
+.nav-label{font-size:10px;color:#637791;letter-spacing:1.5px;padding:10px 12px}
+.nav-btn{border:0;background:transparent;color:#a9bad0;text-align:left;padding:13px 14px;border-radius:10px;margin:3px 0;display:flex;align-items:center;gap:12px;width:100%;font-size:14px}
+.nav-btn .ico{width:20px;text-align:center;font-size:17px}
+.nav-btn.active,.nav-btn:hover{background:#15352f;color:var(--green)}
+.side-bottom{margin-top:auto;border-top:1px solid var(--border);padding-top:15px}
+.main{margin-left:245px;width:calc(100% - 245px);padding:28px;max-width:1600px}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:28px}
+.topbar h1{font-size:25px;margin:0 0 7px}
+.topbar p{margin:0;color:var(--muted);font-size:13px}
+.user-pill{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:10px 13px;color:var(--muted);font-size:12px;overflow-wrap:anywhere}
+.page{display:none}.page.active{display:block}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px;margin-bottom:22px}
+.card,.panel{background:var(--panel);border:1px solid var(--border);border-radius:15px;padding:20px}
+.metric-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.metric-label{font-size:12px;color:var(--muted)}
+.metric-icon{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-size:19px;background:#1d3044}
+.metric-value{font-size:24px;font-weight:700;margin-top:16px;overflow-wrap:anywhere}
+.metric-sub{font-size:11px;color:var(--muted);margin-top:7px}
+.green{color:var(--green)!important}.red{color:var(--red)!important}.blue{color:var(--blue)!important}.yellow{color:var(--yellow)!important}
+.content-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:18px}
+.panel{margin-bottom:18px;min-width:0}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.panel-head h2{font-size:16px;margin:0}
+.muted{color:var(--muted)}.small{font-size:12px}
+.btn{border:0;border-radius:9px;padding:11px 15px;background:var(--green);color:#06251c;font-weight:700;font-size:13px}
+.btn:hover{filter:brightness(1.08)}
+.btn.secondary{background:#25354b;color:var(--text);border:1px solid #34465e}
+.btn.danger{background:#482532;color:#fecdd3;border:1px solid #743244}
+.btn.bluebtn{background:#1e3c60;color:#bfdbfe;border:1px solid #315780}
+.btn.smallbtn{padding:7px 10px;font-size:11px}
+.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.field{display:flex;flex-direction:column;gap:7px;min-width:0}
+.field.full{grid-column:1/-1}
+label{font-size:12px;color:#a9bad0}
+input,select,textarea{width:100%;background:#0c1626;border:1px solid #2a3b52;color:var(--text);padding:12px;border-radius:9px;outline:none;min-width:0}
+input:focus,select:focus,textarea:focus{border-color:var(--green)}
+input[readonly]{background:#172438;color:var(--green);font-weight:700}
+textarea{resize:vertical;min-height:75px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:15px}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:600px}
+th,td{padding:13px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:middle}
+th{color:var(--muted);font-weight:500}td{color:#dce7f5}
+.status{display:inline-block;padding:5px 8px;border-radius:20px;font-size:10px;background:#24354a;color:#d1ddeb}
+.status.ok{background:#123c31;color:#6ee7b7}.status.pending{background:#42351a;color:#fcd34d}.status.late{background:#472431;color:#fda4af}
+.list{display:flex;flex-direction:column;gap:10px}
+.list-item{display:flex;align-items:center;gap:12px;padding:12px;background:#0e1929;border:1px solid var(--border);border-radius:10px;min-width:0}
+.list-icon{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:#1d3044;flex-shrink:0}
+.list-desc{flex:1;min-width:0}
+.list-desc strong{font-size:13px;display:block;overflow-wrap:anywhere}
+.list-desc small{font-size:11px;color:var(--muted);display:block;margin-top:5px}
+.list-amount{font-weight:700;font-size:13px;text-align:right;white-space:nowrap}
+.empty{color:var(--muted);text-align:center;padding:25px 10px;font-size:13px}
+.progress{height:7px;background:#27364a;border-radius:10px;overflow:hidden;margin-top:12px}
+.progress span{display:block;height:100%;background:var(--green);border-radius:10px}
+.debt-card{cursor:pointer;transition:border-color .15s,transform .15s}
+.debt-card:hover{border-color:var(--green);transform:translateY(-2px)}
+.debt-card-top{display:flex;align-items:center;gap:12px;margin-bottom:17px}
+.person-icon{width:43px;height:43px;border-radius:12px;background:#15352f;color:var(--green);display:grid;place-items:center;font-size:20px;flex-shrink:0}
+.debt-name{font-size:17px;font-weight:700}.debt-caption{font-size:11px;color:var(--muted);margin-top:5px}
+.chevron{margin-left:auto;font-size:24px;color:var(--muted)}
+.debt-metrics{display:grid;grid-template-columns:1fr 1fr;gap:17px 12px}
+.debt-metric-label{font-size:11px;color:var(--muted);margin-bottom:6px}
+.debt-metric-value{font-size:16px;font-weight:700;overflow-wrap:anywhere}
+.click-note{color:var(--muted);font-size:11px;margin-top:17px;border-top:1px solid var(--border);padding-top:12px}
+.back-btn{display:flex;align-items:center;gap:8px;margin-bottom:17px}
+.detail-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.detail-summary .card{padding:15px}.detail-summary .metric-value{font-size:18px}
+.login-screen{min-height:100vh;display:grid;place-items:center;padding:20px}
+.login-card{width:100%;max-width:410px;background:var(--panel);border:1px solid var(--border);padding:30px;border-radius:18px}
+.login-card h1{font-size:25px;margin:0 0 8px}
+.login-card p{color:var(--muted);font-size:13px;line-height:1.6;margin-bottom:24px}
+.login-card .field{margin-bottom:14px}.login-card .btn{width:100%;margin-top:8px}
+#message{font-size:12px;margin-top:14px;line-height:1.5}
+.weekday-list{display:flex;flex-direction:column;gap:8px;margin-top:3px}
+.weekday-row{display:flex;align-items:center;gap:10px;background:#0c1626;border:1px solid var(--border);padding:10px 12px;border-radius:9px}
+.weekday-row input[type=checkbox]{width:17px;height:17px;accent-color:var(--green);flex-shrink:0}
+.weekday-name{font-size:13px;flex:1}
+.weekday-date{font-size:12px;color:var(--green);white-space:nowrap;font-weight:700}
+.schedule-note{font-size:11px;color:var(--muted);line-height:1.5}
+hr{border:0;border-top:1px solid var(--border);margin:18px 0}
+@media(max-width:1100px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.content-grid{grid-template-columns:1fr}.detail-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:720px){
+.sidebar{width:100%;height:66px;inset:auto 0 0 0;padding:5px 7px;flex-direction:row;justify-content:space-around;border-right:0;border-top:1px solid var(--border);background:#0d1728}
+.brand,.nav-label,.side-bottom{display:none}
+.sidebar nav{display:flex;width:100%;justify-content:space-around;gap:3px}
+.nav-btn{margin:0;padding:8px 3px;display:flex;flex-direction:column;justify-content:center;gap:4px;text-align:center;font-size:9px;min-width:0}
+.nav-btn .ico{font-size:17px}
+.main{margin:0;width:100%;padding:19px 13px 90px}
+.topbar{margin-bottom:20px;align-items:flex-start}.topbar h1{font-size:21px}
+.user-pill{font-size:10px;padding:8px;max-width:45%}
+.grid{gap:9px}.card{padding:14px}
+.metric-value{font-size:19px;margin-top:12px}.metric-icon{width:31px;height:31px;font-size:15px}
+.metric-label{font-size:11px}.panel{padding:15px}
+.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}
+.panel-head{align-items:flex-start}.btn{padding:10px 12px}
+.debt-metric-value{font-size:15px}.debt-card{padding:15px}
+.weekday-row{padding:9px 8px}.weekday-name{font-size:12px}.weekday-date{font-size:11px}
+}
 </style>
 </head>
 <body>
 
-<div id="telaLogin">
-  <div class="login-box">
-    <h1>💰</h1>
-    <h2>Meu Controle Financeiro</h2>
-    <p>Entre na sua conta para acessar seus dados.</p>
-    <label for="loginEmail">E-mail</label>
-    <input id="loginEmail" type="email" autocomplete="username" placeholder="seu@email.com">
-    <label for="loginSenha">Senha</label>
-    <input id="loginSenha" type="password" autocomplete="current-password" placeholder="Sua senha">
-    <button class="btn-login" id="btnLogin">🔐 Entrar</button>
-    <div id="mensagemLogin"></div>
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <div class="brand" style="padding:0 0 20px"><div class="brand-icon">▣</div><div><h2>Meu Controle</h2><small>CONTROLE FINANCEIRO</small></div></div>
+    <h1>Bem-vindo de volta</h1>
+    <p>Entre para acompanhar suas dívidas, movimentações e investimentos.</p>
+    <form id="loginForm">
+      <div class="field"><label for="email">E-mail</label><input id="email" type="email" autocomplete="username" required placeholder="seu@email.com"></div>
+      <div class="field"><label for="password">Senha</label><input id="password" type="password" autocomplete="current-password" required placeholder="Sua senha"></div>
+      <button class="btn" type="submit">Entrar na minha conta</button>
+    </form>
+    <div id="message"></div>
   </div>
 </div>
 
-<div id="programa" class="oculto">
-  <div class="topo">
-    <div>
-      <h1>💰 Meu Controle Financeiro</h1>
-      <div class="usuario">Conta: <span id="emailUsuario"></span></div>
-    </div>
-    <button class="btn-sair" id="btnSair">Sair</button>
-  </div>
+<div id="app" class="app" style="display:none">
+  <aside class="sidebar">
+    <div class="brand"><div class="brand-icon">▣</div><div><h2>Meu Controle</h2><small>FINANCEIRO</small></div></div>
+    <div class="nav-label">MENU PRINCIPAL</div>
+    <nav>
+      <button class="nav-btn active" data-page="home"><span class="ico">⌂</span>Início</button>
+      <button class="nav-btn" data-page="debts"><span class="ico">▤</span>Dívidas</button>
+      <button class="nav-btn" data-page="movements"><span class="ico">⇄</span>Movimentações</button>
+      <button class="nav-btn" data-page="investments"><span class="ico">◈</span>Investimentos</button>
+    </nav>
+    <div class="side-bottom"><button id="logoutBtn" class="nav-btn"><span class="ico">⇥</span>Sair da conta</button></div>
+  </aside>
 
-  <div class="aviso">
-    Pagamentos parciais e juros ficam registrados no histórico da parcela.
-    O pagamento de juros não reduz o principal. Confira os valores antes de confirmar.
-  </div>
+  <main class="main">
+    <header class="topbar"><div><h1 id="pageTitle">Visão geral</h1><p id="pageSubtitle">Acompanhe sua vida financeira em um só lugar.</p></div><div class="user-pill" id="userEmail">Conta conectada</div></header>
 
-  <div class="resumo">
-    <div class="card"><strong>Saldo</strong><p id="saldo">R$ 0,00</p></div>
-    <div class="card"><strong>Entradas</strong><p id="entradas">R$ 0,00</p></div>
-    <div class="card"><strong>Saídas</strong><p id="saidas">R$ 0,00</p></div>
-    <div class="card"><strong>Dívidas restantes</strong><p id="totalDividas">R$ 0,00</p></div>
-  </div>
+    <section id="page-home" class="page active">
+      <div class="grid">
+        <div class="card"><div class="metric-top"><span class="metric-label">Saldo disponível</span><span class="metric-icon green">↗</span></div><div class="metric-value" id="homeBalance">R$ 0,00</div><div class="metric-sub">Entradas menos saídas</div></div>
+        <div class="card"><div class="metric-top"><span class="metric-label">Dívidas em aberto</span><span class="metric-icon red">▤</span></div><div class="metric-value red" id="homeDebt">R$ 0,00</div><div class="metric-sub">Saldo das parcelas pendentes</div></div>
+        <div class="card"><div class="metric-top"><span class="metric-label">Total investido</span><span class="metric-icon blue">◈</span></div><div class="metric-value blue" id="homeInvested">R$ 0,00</div><div class="metric-sub">Investimentos registrados</div></div>
+        <div class="card"><div class="metric-top"><span class="metric-label">Lucro previsto</span><span class="metric-icon yellow">↗</span></div><div class="metric-value green" id="homeProfit">R$ 0,00</div><div class="metric-sub">Lucro ainda previsto</div></div>
+      </div>
+      <div class="content-grid">
+        <div class="panel">
+          <div class="panel-head"><h2>Resumo das movimentações</h2><button class="btn secondary smallbtn" data-goto="movements">Ver movimentações</button></div>
+          <div class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr));margin-bottom:0"><div><div class="metric-label">Total de entradas</div><div id="homeIncome" class="metric-value green" style="font-size:21px">R$ 0,00</div></div><div><div class="metric-label">Total de saídas</div><div id="homeExpenses" class="metric-value red" style="font-size:21px">R$ 0,00</div></div></div>
+          <hr><div class="panel-head"><h2>Últimas movimentações</h2></div><div id="recentMovements" class="list"><div class="empty">Nenhuma movimentação registrada.</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>Resumo das dívidas</h2><button class="btn secondary smallbtn" data-goto="debts">Abrir dívidas</button></div>
+          <div class="metric-label">Saldo total em aberto</div><div id="homeDebtDetail" class="metric-value red">R$ 0,00</div><div class="progress"><span id="debtProgress" style="width:0%"></span></div><div class="metric-sub" id="debtProgressText">Adicione suas dívidas para começar.</div>
+          <hr><div class="panel-head"><h2>Investimentos recentes</h2><button class="btn secondary smallbtn" data-goto="investments">Ver todos</button></div><div id="recentInvestments" class="list"><div class="empty">Nenhum investimento registrado.</div></div>
+        </div>
+      </div>
+    </section>
 
-  <div class="formulario">
-    <h2>💵 Nova movimentação</h2>
-    <label for="descricao">Descrição</label>
-    <input id="descricao" placeholder="Ex.: Pagamento Uber">
-    <label for="valorMov">Valor</label>
-    <input id="valorMov" type="number" min="0.01" step="0.01" placeholder="Ex.: 150">
-    <label for="dataMov">Data da movimentação</label>
-    <input id="dataMov" type="date">
-    <button class="btn-entrada" id="btnEntrada">🟢 Cadastrar entrada</button>
-    <button class="btn-saida" id="btnSaida">🔴 Cadastrar saída</button>
-  </div>
+    <section id="page-debts" class="page">
+      <div id="debtsOverview">
+        <div class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+          <div class="card"><div class="metric-label">Saldo total em aberto</div><div class="metric-value red" id="debtPageTotal">R$ 0,00</div></div>
+          <div class="card"><div class="metric-label">Pessoas com dívidas</div><div class="metric-value" id="debtPageCount">0</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>Adicionar dívida</h2></div>
+          <form id="debtForm">
+            <div class="form-grid">
+              <div class="field"><label for="debtName">Nome da pessoa ou credor</label><input id="debtName" required placeholder="Ex.: Júlio"></div>
+              <div class="field"><label for="debtType">Tipo de cobrança</label><select id="debtType"><option value="mensal">Mensal</option><option value="semanal">Semanal</option><option value="diaria">Diária (escolher dias da semana)</option></select></div>
 
-  <div class="formulario">
-    <h2>📊 Histórico de movimentações</h2>
-    <div id="historico">Nenhuma movimentação cadastrada.</div>
-  </div>
+              <div class="field full" id="dailyDaysField" style="display:none">
+                <label>Quais dias da semana você paga?</label>
+                <div id="dailyDays" class="weekday-list"></div>
+                <div class="schedule-note">Marque todos os dias em que deve pagar. A data do próximo vencimento aparece ao lado de cada dia selecionado. As parcelas serão criadas somente nesses dias.</div>
+              </div>
 
-  <div class="formulario">
-    <h2>➕ Cadastrar dívida</h2>
-    <label for="nome">Nome da dívida</label>
-    <input id="nome" placeholder="Ex.: Júlio">
-    <label for="valorTotal">Valor total da dívida</label>
-    <input id="valorTotal" type="number" min="0.01" step="0.01" placeholder="Ex.: 2000">
-    <label for="tipo">Frequência</label>
-    <select id="tipo">
-      <option value="">Selecione</option>
-      <option value="Diária">Diária</option>
-      <option value="Semanal">Semanal</option>
-      <option value="Mensal">Mensal</option>
-    </select>
-    <label for="valorParcela">Valor de cada pagamento</label>
-    <input id="valorParcela" type="number" min="0.01" step="0.01" placeholder="Ex.: 100">
-    <label for="dataInicio">Primeira data de pagamento</label>
-    <input id="dataInicio" type="date">
-    <h3>Quais dias serão pagos?</h3>
-    <div class="dias">
-      <label class="dia"><input type="checkbox" value="1">Segunda</label>
-      <label class="dia"><input type="checkbox" value="2">Terça</label>
-      <label class="dia"><input type="checkbox" value="3">Quarta</label>
-      <label class="dia"><input type="checkbox" value="4">Quinta</label>
-      <label class="dia"><input type="checkbox" value="5">Sexta</label>
-      <label class="dia"><input type="checkbox" value="6">Sábado</label>
-      <label class="dia"><input type="checkbox" value="0">Domingo</label>
-    </div>
-    <button class="btn-entrada" id="btnCadastrarDivida">Cadastrar dívida</button>
-  </div>
+              <div class="field" id="weekdayField" style="display:none">
+                <label for="debtWeekday">Dia da semana para pagar</label>
+                <select id="debtWeekday">
+                  <option value="1">Segunda-feira</option><option value="2">Terça-feira</option><option value="3">Quarta-feira</option><option value="4">Quinta-feira</option><option value="5">Sexta-feira</option><option value="6" selected>Sábado</option><option value="0">Domingo</option>
+                </select>
+              </div>
 
-  <div class="formulario">
-    <h2>📋 Minhas dívidas</h2>
-    <div id="lista">Nenhuma dívida cadastrada.</div>
-  </div>
+              <div class="field" id="monthdayField">
+                <label for="debtMonthDay">Dia do mês para pagar</label>
+                <select id="debtMonthDay"></select>
+              </div>
+
+              <div class="field"><label for="debtAmount">Valor total calculado (R$)</label><input id="debtAmount" type="number" step="0.01" value="0.00" readonly><small class="muted">Valor da parcela × quantidade de parcelas.</small></div>
+              <div class="field"><label for="debtInstallment">Valor de cada parcela (R$)</label><input id="debtInstallment" type="number" min="0.01" step="0.01" required placeholder="Ex.: 150,00"></div>
+              <div class="field"><label for="debtStart">Data inicial da cobrança</label><input id="debtStart" type="date" required><small class="muted">As datas das parcelas serão calculadas a partir desta data.</small></div>
+              <div class="field"><label for="debtCount">Quantidade de parcelas</label><input id="debtCount" type="number" min="1" step="1" required placeholder="Ex.: 12"></div>
+            </div>
+            <div class="actions"><button class="btn" type="submit">Salvar dívida</button></div>
+          </form>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>Contas por pessoa</h2><button class="btn secondary smallbtn" id="refreshDebts">Atualizar</button></div>
+          <div class="metric-sub" style="margin-bottom:16px">Clique em uma pessoa para ver as parcelas e registrar pagamentos.</div>
+          <div id="debtsList" class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div class="empty">Carregando dívidas...</div></div>
+        </div>
+      </div>
+      <div id="debtDetail" style="display:none">
+        <button class="btn secondary back-btn" id="backToDebts">← Voltar para todas as pessoas</button>
+        <div id="debtDetailContent"></div>
+      </div>
+    </section>
+
+    <section id="page-movements" class="page">
+      <div class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+        <div class="card"><div class="metric-label">Entradas registradas</div><div class="metric-value green" id="movementIncome">R$ 0,00</div></div>
+        <div class="card"><div class="metric-label">Saídas registradas</div><div class="metric-value red" id="movementExpenses">R$ 0,00</div></div>
+      </div>
+      <div class="panel"><div class="panel-head"><h2>Nova movimentação</h2></div>
+        <form id="movementForm"><div class="form-grid">
+          <div class="field full"><label for="movementDescription">Descrição</label><input id="movementDescription" required placeholder="Ex.: Corrida, alimentação, conta..."></div>
+          <div class="field"><label for="movementAmount">Valor (R$)</label><input id="movementAmount" type="number" min="0.01" step="0.01" required></div>
+          <div class="field"><label for="movementType">Tipo</label><select id="movementType"><option value="entrada">Entrada</option><option value="saida">Saída</option></select></div>
+          <div class="field"><label for="movementDate">Data</label><input id="movementDate" type="date" required></div>
+        </div><div class="actions"><button class="btn" type="submit">Salvar movimentação</button></div></form>
+      </div>
+      <div class="panel"><div class="panel-head"><h2>Histórico de movimentações</h2></div><div class="table-wrap"><table><thead><tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Valor</th><th>Ação</th></tr></thead><tbody id="movementsTable"></tbody></table></div></div>
+    </section>
+
+    <section id="page-investments" class="page">
+      <div class="grid">
+        <div class="card"><div class="metric-label">Total investido</div><div class="metric-value blue" id="investmentTotal">R$ 0,00</div></div>
+        <div class="card"><div class="metric-label">Lucro previsto pendente</div><div class="metric-value green" id="investmentExpected">R$ 0,00</div></div>
+        <div class="card"><div class="metric-label">Lucro já recebido</div><div class="metric-value green" id="investmentReceived">R$ 0,00</div></div>
+        <div class="card"><div class="metric-label">Investimentos pendentes</div><div class="metric-value" id="investmentPending">0</div></div>
+      </div>
+      <div class="panel"><div class="panel-head"><h2>Cadastrar investimento</h2></div>
+        <form id="investmentForm"><div class="form-grid">
+          <div class="field"><label for="investmentPlace">Local ou plataforma</label><input id="investmentPlace" required placeholder="Ex.: Plataforma, negócio..."></div>
+          <div class="field"><label for="investmentAmount">Valor investido (R$)</label><input id="investmentAmount" type="number" min="0.01" step="0.01" required></div>
+          <div class="field"><label for="investmentProfit">Lucro previsto (R$)</label><input id="investmentProfit" type="number" min="0" step="0.01" value="0" required></div>
+          <div class="field"><label for="investmentDue">Data prevista para retorno</label><input id="investmentDue" type="date" required></div>
+          <div class="field full"><label for="investmentNotes">Observações (opcional)</label><textarea id="investmentNotes"></textarea></div>
+        </div><div class="actions"><button class="btn" type="submit">Salvar investimento</button></div></form>
+      </div>
+      <div class="panel"><div class="panel-head"><h2>Meus investimentos</h2></div><div class="table-wrap"><table><thead><tr><th>Plataforma</th><th>Investido</th><th>Lucro previsto</th><th>Data prevista</th><th>Status</th><th>Ações</th></tr></thead><tbody id="investmentsTable"></tbody></table></div></div>
+    </section>
+  </main>
 </div>
 
 <script>
@@ -157,408 +265,603 @@ const SUPABASE_URL="https://hpllxtcmpswfmgfyoqmz.supabase.co";
 const SUPABASE_KEY="sb_publishable_9uasI1S4-YivE9y35SYrqw_D4GHDxP0";
 const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
-let dividas=[];
-let movimentacoes=[];
-let usuarioAtual=null;
-let operacaoEmAndamento=false;
+let currentUser=null,debts=[],movements=[],investments=[],selectedDebtId=null;
+const $=id=>document.getElementById(id);
+const money=v=>(Number(v)||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const today=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10)};
+const dateBR=v=>{if(!v)return "—";const p=String(v).slice(0,10).split("-");return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:v};
+const num=v=>Number(v)||0;
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function parseMoney(value){
+ const s=String(value??"").trim();
+ if(!s)return NaN;
+ if(s.includes(","))return Number(s.replace(/\./g,"").replace(",","."));
+ return Number(s);
+}
+const pageInfo={
+ home:["Visão geral","Acompanhe sua vida financeira em um só lugar."],
+ debts:["Minhas dívidas","Veja os valores por pessoa e abra as parcelas."],
+ movements:["Movimentações","Registre suas entradas e saídas."],
+ investments:["Investimentos","Acompanhe valores aplicados e lucros."]
+};
+const WEEKDAYS=[
+ {value:1,name:"Segunda-feira"},
+ {value:2,name:"Terça-feira"},
+ {value:3,name:"Quarta-feira"},
+ {value:4,name:"Quinta-feira"},
+ {value:5,name:"Sexta-feira"},
+ {value:6,name:"Sábado"},
+ {value:0,name:"Domingo"}
+];
 
-function dinheiro(v){
-  return Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
-}
-function dataHoje(){
-  const d=new Date();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-}
-function dataBR(data){
-  if(!data)return "—";
-  const p=String(data).slice(0,10).split("-");
-  return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:data;
-}
-function dataISO(d){
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-}
-function colocarDataHoje(){document.getElementById("dataMov").value=dataHoje();}
-function escapeHTML(v){
-  return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-}
-function centavos(v){return Math.round((Number(v)||0)*100);}
-function reais(c){return c/100;}
-function erroMsg(e){console.error(e);return e?.message||"Erro inesperado.";}
-
-function normalizarParcela(p){
-  const valor=Number(p.valor)||0;
-  const pagoPrincipal=p.pagoPrincipal!==undefined
-    ?Math.max(0,Number(p.pagoPrincipal)||0)
-    :(p.paga?valor:0);
-  return {
-    ...p,
-    numero:Number(p.numero)||1,
-    valor,
-    pagoPrincipal:Math.min(valor,pagoPrincipal),
-    paga:pagoPrincipal>=valor-0.005,
-    jurosPagos:Math.max(0,Number(p.jurosPagos)||0),
-    historico:Array.isArray(p.historico)?p.historico:[]
-  };
-}
-function valorPago(p){return Math.min(p.valor,Math.max(0,Number(p.pagoPrincipal)||0));}
-function saldoParcela(p){return Math.max(0,Math.round((p.valor-valorPago(p))*100)/100);}
-function principalPago(d){return d.parcelas.reduce((s,p)=>s+valorPago(p),0);}
-function saldoDivida(d){return Math.max(0,Math.round((d.valorTotal-principalPago(d))*100)/100);}
-function statusParcela(p){
-  if(saldoParcela(p)<=0)return {classe:"paga",texto:"✅ PAGA"};
-  if(p.data<dataHoje())return {classe:"atrasada",texto:"🔴 ATRASADA"};
-  if(p.data===dataHoje())return {classe:"hoje",texto:"🟠 VENCE HOJE"};
-  return {classe:"futura",texto:"🔵 PENDENTE"};
-}
-function pedirValor(texto,limite){
-  const entrada=prompt(texto,"");
-  if(entrada===null)return null;
-  const v=Number(entrada.trim().replace(",","."));
-  if(!Number.isFinite(v)||v<=0){alert("Digite um valor maior que zero.");return null;}
-  const arred=Math.round(v*100)/100;
-  if(limite!==undefined&&arred>limite+0.005){alert("O valor não pode ser maior que o saldo informado.");return null;}
-  return arred;
-}
-function adicionarHistorico(p,tipo,valor,observacao){
-  p.historico=p.historico||[];
-  p.historico.push({
-    tipo,valor:Number(valor),data:dataHoje(),
-    observacao:observacao||"",
-    criadoEm:new Date().toISOString()
-  });
+function showApp(user){
+ currentUser=user;
+ $("loginScreen").style.display="none";
+ $("app").style.display="flex";
+ $("userEmail").textContent=user.email||"Conta conectada";
+ $("movementDate").value=today();
+ $("debtStart").value=today();
+ $("investmentDue").value=today();
+ updateDebtTotal();
+ updatePaymentSchedule();
+ updateDailyDaysPreview();
+ carregarDados();
 }
 
-/* LOGIN */
-async function fazerLogin(){
-  const email=document.getElementById("loginEmail").value.trim();
-  const senha=document.getElementById("loginSenha").value;
-  const msg=document.getElementById("mensagemLogin");
-  if(!email||!senha){msg.textContent="Digite o e-mail e a senha.";msg.style.color="#dc3545";return;}
-  msg.textContent="Entrando...";
-  const {data,error}=await supabaseClient.auth.signInWithPassword({email,password:senha});
-  if(error){msg.textContent=error.message;msg.style.color="#dc3545";return;}
-  usuarioAtual=data.user;
-  await entrarNoPrograma();
-}
-async function sair(){
-  await supabaseClient.auth.signOut();
-  usuarioAtual=null;
-  document.getElementById("programa").classList.add("oculto");
-  document.getElementById("telaLogin").classList.remove("oculto");
-}
-async function entrarNoPrograma(){
-  if(!usuarioAtual)return;
-  document.getElementById("telaLogin").classList.add("oculto");
-  document.getElementById("programa").classList.remove("oculto");
-  document.getElementById("emailUsuario").textContent=usuarioAtual.email||"";
-  colocarDataHoje();
-  await carregarDados();
-  mostrarMovimentacoes();
-  mostrarDividas();
-  atualizarResumo();
-}
-async function carregarDados(){
-  const {data:ds,error:ed}=await supabaseClient.from("dividas").select("*")
-    .eq("user_id",usuarioAtual.id).order("created_at",{ascending:true});
-  if(ed){alert("Erro ao carregar dívidas: "+erroMsg(ed));return;}
-  const {data:ms,error:em}=await supabaseClient.from("movimentacoes").select("*")
-    .eq("user_id",usuarioAtual.id).order("data",{ascending:false});
-  if(em){alert("Erro ao carregar movimentações: "+erroMsg(em));return;}
-  dividas=(ds||[]).map(d=>({
-    id:d.id,nome:d.nome,valorTotal:Number(d.valor_total)||0,tipo:d.tipo,
-    valorParcela:Number(d.valor_parcela)||0,dataInicio:d.data_inicio,
-    dias:d.dias||[],parcelas:(Array.isArray(d.parcelas)?d.parcelas:[]).map(normalizarParcela)
-  }));
-  movimentacoes=(ms||[]).map(m=>({
-    id:m.id,descricao:m.descricao,valor:Number(m.valor)||0,data:m.data,tipo:m.tipo
-  }));
-}
-
-/* MOVIMENTAÇÕES */
-async function cadastrarMovimentacao(tipo){
-  const descricao=document.getElementById("descricao").value.trim();
-  const valor=Number(document.getElementById("valorMov").value);
-  const data=document.getElementById("dataMov").value;
-  if(!descricao)return alert("Digite uma descrição.");
-  if(!Number.isFinite(valor)||valor<=0)return alert("Digite um valor válido.");
-  if(!data)return alert("Escolha a data.");
-  const {data:nova,error}=await supabaseClient.from("movimentacoes").insert({
-    user_id:usuarioAtual.id,descricao,valor,data,tipo
-  }).select().single();
-  if(error)return alert("Erro ao salvar: "+erroMsg(error));
-  movimentacoes.push({id:nova.id,descricao:nova.descricao,valor:Number(nova.valor),data:nova.data,tipo:nova.tipo});
-  mostrarMovimentacoes();atualizarResumo();
-  document.getElementById("descricao").value="";
-  document.getElementById("valorMov").value="";
-  colocarDataHoje();
-}
-function mostrarMovimentacoes(){
-  const el=document.getElementById("historico");
-  if(!movimentacoes.length){el.textContent="Nenhuma movimentação cadastrada.";return;}
-  el.innerHTML="";
-  [...movimentacoes].sort((a,b)=>String(b.data).localeCompare(String(a.data))).forEach(m=>{
-    const row=document.createElement("div");row.className="movimentacao";
-    const info=document.createElement("div");
-    info.innerHTML=`<strong>${m.tipo==="entrada"?"🟢":"🔴"} ${escapeHTML(m.descricao)}</strong><br>📅 ${dataBR(m.data)}<br><span class="${m.tipo==="entrada"?"mov-entrada":"mov-saida"}">${m.tipo==="entrada"?"+":"−"} ${dinheiro(m.valor)}</span>`;
-    const btn=document.createElement("button");btn.className="btn-excluir-mov";btn.textContent="🗑️";
-    btn.addEventListener("click",()=>excluirMovimentacao(m.id));
-    row.append(info,btn);el.appendChild(row);
-  });
-}
-async function excluirMovimentacao(id){
-  if(!confirm("Excluir esta movimentação?"))return;
-  const {error}=await supabaseClient.from("movimentacoes").delete().eq("id",id).eq("user_id",usuarioAtual.id);
-  if(error)return alert("Erro ao excluir: "+erroMsg(error));
-  movimentacoes=movimentacoes.filter(m=>String(m.id)!==String(id));
-  mostrarMovimentacoes();atualizarResumo();
-}
-
-/* CADASTRO DE DÍVIDA */
-function gerarParcelas(total,valorParcela,inicio,dias){
-  const totalC=centavos(total),parcelaC=centavos(valorParcela);
-  const qtd=Math.ceil(totalC/parcelaC);
-  const data=new Date(inicio+"T12:00:00");
-  const arr=[];let tentativas=0;
-  while(arr.length<qtd&&tentativas<5000){
-    if(dias.includes(data.getDay())){
-      const restante=totalC-parcelaC*arr.length;
-      arr.push({numero:arr.length+1,data:dataISO(data),valor:reais(Math.min(parcelaC,restante)),paga:false,pagoPrincipal:0,jurosPagos:0,historico:[]});
-    }
-    data.setDate(data.getDate()+1);tentativas++;
-  }
-  if(arr.length!==qtd)throw new Error("Não foi possível gerar todas as datas.");
-  return arr;
-}
-async function cadastrarDivida(){
-  const nome=document.getElementById("nome").value.trim();
-  const valorTotal=Number(document.getElementById("valorTotal").value);
-  const tipo=document.getElementById("tipo").value;
-  const valorParcela=Number(document.getElementById("valorParcela").value);
-  const dataInicio=document.getElementById("dataInicio").value;
-  const dias=Array.from(document.querySelectorAll(".dias input:checked")).map(c=>Number(c.value));
-  if(!nome)return alert("Digite o nome da dívida.");
-  if(!Number.isFinite(valorTotal)||valorTotal<=0)return alert("Digite um valor total válido.");
-  if(!tipo)return alert("Escolha a frequência.");
-  if(!Number.isFinite(valorParcela)||valorParcela<=0)return alert("Digite o valor de cada pagamento.");
-  if(!dataInicio)return alert("Escolha a primeira data.");
-  if(!dias.length)return alert("Escolha pelo menos um dia da semana.");
-  let parcelas;
-  try{parcelas=gerarParcelas(valorTotal,valorParcela,dataInicio,dias);}catch(e){return alert(e.message);}
-  const {data:nova,error}=await supabaseClient.from("dividas").insert({
-    user_id:usuarioAtual.id,nome,valor_total:valorTotal,tipo,
-    valor_parcela:valorParcela,data_inicio:dataInicio,dias,parcelas
-  }).select().single();
-  if(error)return alert("Erro ao salvar: "+erroMsg(error));
-  dividas.push({
-    id:nova.id,nome:nova.nome,valorTotal:Number(nova.valor_total),tipo:nova.tipo,
-    valorParcela:Number(nova.valor_parcela),dataInicio:nova.data_inicio,dias:nova.dias||[],
-    parcelas:(nova.parcelas||[]).map(normalizarParcela)
-  });
-  mostrarDividas();atualizarResumo();
-  ["nome","valorTotal","tipo","valorParcela","dataInicio"].forEach(id=>document.getElementById(id).value="");
-  document.querySelectorAll(".dias input").forEach(c=>c.checked=false);
-}
-
-/* GRAVAÇÃO SEGURA NO CAMPO JSONB EXISTENTE */
-async function salvarDivida(d,parcelasAntigas,valorTotalAntigo,valorParcelaAntigo,dataInicioAntigo){
-  if(operacaoEmAndamento){alert("Aguarde a operação anterior terminar.");return false;}
-  operacaoEmAndamento=true;
-  const {error}=await supabaseClient.from("dividas").update({
-    parcelas:d.parcelas,valor_total:d.valorTotal,valor_parcela:d.valorParcela,data_inicio:d.dataInicio,dias:d.dias
-  }).eq("id",d.id).eq("user_id",usuarioAtual.id);
-  operacaoEmAndamento=false;
-  if(error){
-    d.parcelas=parcelasAntigas;
-    d.valorTotal=valorTotalAntigo;
-    d.valorParcela=valorParcelaAntigo;
-    d.dataInicio=dataInicioAntigo;
-    alert("Não foi possível salvar a alteração: "+erroMsg(error));
-    mostrarDividas();atualizarResumo();return false;
-  }
-  mostrarDividas();atualizarResumo();return true;
-}
-async function alterarParcela(id,numero,acao){
-  const d=dividas.find(x=>String(x.id)===String(id));if(!d)return;
-  const p=d.parcelas.find(x=>Number(x.numero)===Number(numero));if(!p)return;
-  const antigas=JSON.parse(JSON.stringify(d.parcelas));
-  const totalAntigo=d.valorTotal,parcelaAntiga=d.valorParcela,dataAntiga=d.dataInicio;
-
-  if(acao==="quitar"){
-    const saldo=saldoParcela(p);
-    if(saldo<=0)return alert("Esta parcela já está quitada.");
-    if(!confirm(`Confirmar pagamento de ${dinheiro(saldo)} para quitar esta parcela?`))return;
-    p.pagoPrincipal=Math.min(p.valor,Math.round((valorPago(p)+saldo)*100)/100);
-    p.paga=true;
-    adicionarHistorico(p,"quitação",saldo,"Pagamento do saldo da parcela");
-  }else if(acao==="parcial"){
-    const saldo=saldoParcela(p);
-    if(saldo<=0)return alert("Esta parcela já está quitada.");
-    const valor=pedirValor(`Quanto você está pagando? Saldo atual: ${dinheiro(saldo)}`,saldo);
-    if(valor===null)return;
-    p.pagoPrincipal=Math.min(p.valor,Math.round((valorPago(p)+valor)*100)/100);
-    p.paga=p.pagoPrincipal>=p.valor-0.005;
-    adicionarHistorico(p,"parcial",valor,"Pagamento parcial do principal");
-  }else if(acao==="juros"){
-    const valor=pedirValor("Qual valor de juros você pagou? Esse valor NÃO reduzirá o principal.");
-    if(valor===null)return;
-    if(!confirm(`Registrar ${dinheiro(valor)} somente como juros, sem reduzir o principal?`))return;
-    p.jurosPagos=Math.round((p.jurosPagos+valor)*100)/100;
-    adicionarHistorico(p,"juros",valor,"Somente juros; principal não alterado");
-  }else if(acao==="desfazer"){
-    if(!confirm("Desfazer o pagamento de principal desta parcela? Os juros registrados serão mantidos."))return;
-    const anterior=valorPago(p);
-    p.pagoPrincipal=0;p.paga=false;
-    adicionarHistorico(p,"estorno",anterior,"Pagamento de principal desfeito");
-  }
-  await salvarDivida(d,antigas,totalAntigo,parcelaAntiga,dataAntiga);
-}
-
-/* AUMENTAR / REDISTRIBUIR PARCELAS EM ABERTO.
-   Preserva o principal já pago e os históricos, redistribuindo o saldo restante. */
-async function aumentarParcelas(id){
-  const d=dividas.find(x=>String(x.id)===String(id));if(!d)return;
-  const saldo=saldoDivida(d);
-  if(saldo<=0)return alert("Esta dívida já está quitada.");
-  const abertas=d.parcelas.filter(p=>saldoParcela(p)>0);
-  const atual=abertas.length;
-  const entrada=prompt(`Existem ${atual} parcelas em aberto e ${dinheiro(saldo)} de principal restante.\nDigite a NOVA quantidade total de parcelas em aberto.`,String(atual+1));
-  if(entrada===null)return;
-  const qtd=Number(entrada);
-  if(!Number.isInteger(qtd)||qtd<atual||qtd>500)return alert(`Digite um número inteiro entre ${atual} e 500 para não diminuir as parcelas em aberto.`);
-  const primeiraData=prompt("Data do próximo vencimento (AAAA-MM-DD):",abertas.map(p=>p.data).sort()[0]||dataHoje());
-  if(primeiraData===null)return;
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(primeiraData)||Number.isNaN(new Date(primeiraData+"T12:00:00").getTime()))return alert("Data inválida. Use AAAA-MM-DD.");
-  const antigas=JSON.parse(JSON.stringify(d.parcelas));
-  const totalAntigo=d.valorTotal,parcelaAntiga=d.valorParcela,dataAntiga=d.dataInicio;
-  const pagas=d.parcelas.filter(p=>saldoParcela(p)<=0);
-  const dias=d.dias.length?d.dias:[new Date(primeiraData+"T12:00:00").getDay()];
-  const data=new Date(primeiraData+"T12:00:00");
-  const novas=[];
-  const saldoC=centavos(saldo),base=Math.floor(saldoC/qtd);
-  let tentativas=0;
-  while(novas.length<qtd&&tentativas<5000){
-    if(dias.includes(data.getDay())){
-      const c=novas.length===qtd-1?saldoC-base*(qtd-1):base;
-      novas.push({
-        numero:0,data:dataISO(data),valor:reais(c),paga:false,pagoPrincipal:0,
-        jurosPagos:0,historico:[],reparcelada:true
-      });
-    }
-    data.setDate(data.getDate()+1);tentativas++;
-  }
-  if(novas.length!==qtd)return alert("Não foi possível gerar as datas.");
-  const pagasOrdenadas=[...pagas].sort((a,b)=>a.data.localeCompare(b.data));
-  d.parcelas=[...pagasOrdenadas,...novas];
-  d.parcelas.forEach((p,i)=>p.numero=i+1);
-  d.valorTotal=Math.round((principalPago(d)+saldo)*100)/100;
-  d.valorParcela=Math.round((saldo/qtd)*100)/100;
-  d.dataInicio=primeiraData;
-  if(await salvarDivida(d,antigas,totalAntigo,parcelaAntiga,dataAntiga)){
-    alert(`Pronto! O saldo de ${dinheiro(saldo)} foi dividido em ${qtd} parcelas em aberto. As parcelas quitadas foram mantidas.`);
-  }
-}
-
-/* EXCLUSÃO */
-async function excluirDivida(id){
-  const d=dividas.find(x=>String(x.id)===String(id));if(!d)return;
-  if(!confirm(`Excluir a dívida "${d.nome}"? Esta ação não pode ser desfeita.`))return;
-  const {error}=await supabaseClient.from("dividas").delete().eq("id",id).eq("user_id",usuarioAtual.id);
-  if(error)return alert("Erro ao excluir: "+erroMsg(error));
-  dividas=dividas.filter(x=>String(x.id)!==String(id));mostrarDividas();atualizarResumo();
-}
-
-/* TELA DAS DÍVIDAS */
-function mostrarDividas(){
-  const lista=document.getElementById("lista");
-  if(!dividas.length){lista.textContent="Nenhuma dívida cadastrada.";atualizarTotalDividas();return;}
-  lista.innerHTML="";
-  dividas.forEach(d=>{
-    d.parcelas=d.parcelas.map(normalizarParcela);
-    const bloco=document.createElement("div");bloco.className="divida";
-    const cab=document.createElement("div");cab.className="cabecalho-divida";
-    cab.innerHTML=`<h2>${escapeHTML(d.nome)} ▼</h2>
-      <p>Frequência: <strong>${escapeHTML(d.tipo)}</strong></p>
-      <p>Valor total: <strong>${dinheiro(d.valorTotal)}</strong></p>
-      <p>Principal pago: <strong>${dinheiro(principalPago(d))}</strong></p>
-      <p>Principal restante: <strong>${dinheiro(saldoDivida(d))}</strong></p>
-      <p>Parcelas quitadas: ${d.parcelas.filter(p=>saldoParcela(p)<=0).length}/${d.parcelas.length}</p>`;
-    const conteudo=document.createElement("div");conteudo.className="oculto";
-    cab.addEventListener("click",()=>conteudo.classList.toggle("oculto"));
-    d.parcelas.forEach(p=>{
-      const status=statusParcela(p);
-      const row=document.createElement("div");row.className=`parcela ${status.classe}`;
-      const info=document.createElement("div");info.className="info-parcela";
-      info.innerHTML=`<strong>Parcela ${p.numero}/${d.parcelas.length}</strong><br>
-        📅 ${dataBR(p.data)}<br>
-        💰 Valor principal: ${dinheiro(p.valor)}<br>
-        Pago do principal: ${dinheiro(valorPago(p))}<br>
-        Saldo do principal: <strong>${dinheiro(saldoParcela(p))}</strong><br>
-        Juros pagos separadamente: ${dinheiro(p.jurosPagos)}<br>
-        <span class="status-${status.classe}">${status.texto}</span>`;
-      if(p.historico.length){
-        const hist=document.createElement("div");hist.className="historico-pagamentos";
-        hist.textContent="Histórico: "+p.historico.map(h=>`${dataBR(h.data)} — ${h.tipo}: ${dinheiro(h.valor)}${h.observacao?" ("+h.observacao+")":""}`).join(" | ");
-        info.appendChild(hist);
-      }
-      const acoes=document.createElement("div");acoes.className="acoes-parcela";
-      if(saldoParcela(p)>0){
-        const b1=document.createElement("button");b1.className="btn-pagar";b1.textContent="Quitar parcela";
-        b1.addEventListener("click",()=>alterarParcela(d.id,p.numero,"quitar"));acoes.appendChild(b1);
-        const b2=document.createElement("button");b2.className="btn-parcial";b2.textContent="Pagamento parcial";
-        b2.addEventListener("click",()=>alterarParcela(d.id,p.numero,"parcial"));acoes.appendChild(b2);
-      }else{
-        const b3=document.createElement("button");b3.className="btn-editar";b3.textContent="Desfazer quitação";
-        b3.addEventListener("click",()=>alterarParcela(d.id,p.numero,"desfazer"));acoes.appendChild(b3);
-      }
-      const bj=document.createElement("button");bj.className="btn-juros";bj.textContent="Pagar só juros";
-      bj.addEventListener("click",()=>alterarParcela(d.id,p.numero,"juros"));acoes.appendChild(bj);
-      row.append(info,acoes);conteudo.appendChild(row);
-    });
-    const acoesDivida=document.createElement("div");acoesDivida.className="acoes-divida";
-    const bAumentar=document.createElement("button");bAumentar.className="btn-aumentar";bAumentar.textContent="Aumentar parcelas";
-    bAumentar.addEventListener("click",()=>aumentarParcelas(d.id));
-    const bExcluir=document.createElement("button");bExcluir.className="btn-excluir";bExcluir.textContent="🗑️ Excluir dívida";
-    bExcluir.addEventListener("click",()=>excluirDivida(d.id));
-    acoesDivida.append(bAumentar,bExcluir);conteudo.appendChild(acoesDivida);
-    bloco.append(cab,conteudo);lista.appendChild(bloco);
-  });
-  atualizarTotalDividas();
-}
-function atualizarTotalDividas(){
-  document.getElementById("totalDividas").innerText=dinheiro(dividas.reduce((s,d)=>s+saldoDivida(d),0));
-}
-function atualizarResumo(){
-  const entradasTotal=movimentacoes.filter(m=>m.tipo==="entrada").reduce((s,m)=>s+Number(m.valor||0),0);
-  const saidasTotal=movimentacoes.filter(m=>m.tipo!=="entrada").reduce((s,m)=>s+Number(m.valor||0),0);
-  document.getElementById("entradas").innerText=dinheiro(entradasTotal);
-  document.getElementById("saidas").innerText=dinheiro(saidasTotal);
-  document.getElementById("saldo").innerText=dinheiro(entradasTotal-saidasTotal);
-  atualizarTotalDividas();
-}
-
-/* EVENTOS */
-document.getElementById("btnLogin").addEventListener("click",fazerLogin);
-document.getElementById("loginSenha").addEventListener("keydown",e=>{if(e.key==="Enter")fazerLogin();});
-document.getElementById("btnSair").addEventListener("click",sair);
-document.getElementById("btnEntrada").addEventListener("click",()=>cadastrarMovimentacao("entrada"));
-document.getElementById("btnSaida").addEventListener("click",()=>cadastrarMovimentacao("saida"));
-document.getElementById("btnCadastrarDivida").addEventListener("click",cadastrarDivida);
-
-supabaseClient.auth.onAuthStateChange((evento)=>{
-  if(evento==="SIGNED_OUT"){
-    usuarioAtual=null;
-    document.getElementById("telaLogin").classList.remove("oculto");
-    document.getElementById("programa").classList.add("oculto");
-  }
+$("loginForm").addEventListener("submit",async e=>{
+ e.preventDefault();
+ const b=e.submitter;
+ b.disabled=true;
+ $("message").textContent="Entrando...";
+ try{
+  const {data,error}=await supabaseClient.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});
+  if(error)throw error;
+  showApp(data.user);
+ }catch(err){
+  $("message").textContent="Não foi possível entrar: "+err.message;
+  $("message").style.color="var(--red)";
+ }finally{b.disabled=false}
 });
-async function iniciar(){
-  const {data,error}=await supabaseClient.auth.getSession();
-  if(error)console.error(error);
-  if(data?.session){usuarioAtual=data.session.user;await entrarNoPrograma();}
-  else{document.getElementById("telaLogin").classList.remove("oculto");colocarDataHoje();}
+
+$("logoutBtn").addEventListener("click",async()=>{
+ await supabaseClient.auth.signOut();
+ currentUser=null;
+ $("app").style.display="none";
+ $("loginScreen").style.display="grid";
+});
+
+supabaseClient.auth.getSession().then(({data})=>{
+ if(data.session?.user)showApp(data.session.user);
+});
+
+function goPage(page){
+ document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+ $("page-"+page).classList.add("active");
+ document.querySelectorAll(".nav-btn[data-page]").forEach(b=>b.classList.toggle("active",b.dataset.page===page));
+ $("pageTitle").textContent=pageInfo[page][0];
+ $("pageSubtitle").textContent=pageInfo[page][1];
+ window.scrollTo({top:0,behavior:"smooth"});
 }
-iniciar();
+document.querySelectorAll(".nav-btn[data-page]").forEach(b=>b.addEventListener("click",()=>goPage(b.dataset.page)));
+document.querySelectorAll("[data-goto]").forEach(b=>b.addEventListener("click",()=>goPage(b.dataset.goto)));
+
+async function carregarDados(){
+ if(!currentUser)return;
+ try{
+  const r=await Promise.all([
+   supabaseClient.from("dividas").select("*").eq("user_id",currentUser.id).order("created_at",{ascending:false}),
+   supabaseClient.from("movimentacoes").select("*").eq("user_id",currentUser.id).order("data",{ascending:false}),
+   supabaseClient.from("investimentos").select("*").eq("user_id",currentUser.id).order("created_at",{ascending:false})
+  ]);
+  for(const x of r)if(x.error)throw x.error;
+  debts=r[0].data||[];
+  movements=r[1].data||[];
+  investments=r[2].data||[];
+  renderAll();
+ }catch(err){alert("Erro ao carregar dados: "+err.message)}
+}
+
+function updateDebtTotal(){
+ const installment=num($("debtInstallment").value);
+ const count=Math.floor(num($("debtCount").value));
+ const total=installment>0&&count>0?Number((installment*count).toFixed(2)):0;
+ $("debtAmount").value=total.toFixed(2);
+}
+$("debtInstallment").addEventListener("input",updateDebtTotal);
+$("debtCount").addEventListener("input",updateDebtTotal);
+
+for(let dia=1;dia<=31;dia++){
+ const option=document.createElement("option");
+ option.value=dia;
+ option.textContent="Dia "+dia;
+ if(dia===5)option.selected=true;
+ $("debtMonthDay").appendChild(option);
+}
+
+function formatDateLocal(d){
+ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+function parseLocalDate(value){
+ return new Date((value||today())+"T12:00:00");
+}
+function addDays(value,amount){
+ const d=parseLocalDate(value);
+ d.setDate(d.getDate()+amount);
+ return formatDateLocal(d);
+}
+function nextWeekdayDate(start,weekday){
+ const d=parseLocalDate(start);
+ const diff=(Number(weekday)-d.getDay()+7)%7;
+ d.setDate(d.getDate()+diff);
+ return formatDateLocal(d);
+}
+function getSelectedDailyDays(){
+ return [...document.querySelectorAll(".daily-weekday:checked")].map(x=>Number(x.value));
+}
+function buildDailyDays(){
+ $("dailyDays").innerHTML=WEEKDAYS.map(d=>`
+  <label class="weekday-row">
+   <input type="checkbox" class="daily-weekday" value="${d.value}" checked>
+   <span class="weekday-name">${d.name}</span>
+   <span class="weekday-date" data-weekday-date="${d.value}">—</span>
+  </label>
+ `).join("");
+ document.querySelectorAll(".daily-weekday").forEach(input=>{
+  input.addEventListener("change",updateDailyDaysPreview);
+ });
+}
+function updateDailyDaysPreview(){
+ if(!$("dailyDays"))return;
+ const start=$("debtStart").value||today();
+ document.querySelectorAll(".daily-weekday").forEach(input=>{
+  const span=document.querySelector(`[data-weekday-date="${input.value}"]`);
+  if(!span)return;
+  span.textContent=dateBR(nextWeekdayDate(start,Number(input.value)));
+  span.style.opacity=input.checked?"1":".45";
+  span.style.textDecoration=input.checked?"none":"line-through";
+ });
+}
+function updatePaymentSchedule(){
+ const type=$("debtType").value;
+ $("dailyDaysField").style.display=type==="diaria"?"flex":"none";
+ $("weekdayField").style.display=type==="semanal"?"flex":"none";
+ $("monthdayField").style.display=type==="mensal"?"flex":"none";
+ updateDailyDaysPreview();
+}
+$("debtType").addEventListener("change",updatePaymentSchedule);
+$("debtStart").addEventListener("change",updateDailyDaysPreview);
+buildDailyDays();
+updatePaymentSchedule();
+
+/*
+  Para a cobrança diária, a parcela só vence nos dias selecionados.
+  O array de dias é guardado dentro dos dados JSON das parcelas,
+  sem exigir uma nova coluna na tabela do Supabase.
+*/
+function dueDate(start,type,index,weekday,monthDay,dailyDays){
+ const startDate=parseLocalDate(start);
+
+ if(type==="diaria"){
+  const selected=Array.isArray(dailyDays)&&dailyDays.length
+   ?dailyDays.map(Number).sort((a,b)=>a-b)
+   :null;
+
+  // Dívidas antigas sem dias escolhidos continuam vencendo diariamente.
+  if(!selected){
+   startDate.setDate(startDate.getDate()+index);
+   return formatDateLocal(startDate);
+  }
+
+  let found=0;
+  let cursor=parseLocalDate(start);
+  for(let safety=0;safety<50000;safety++){
+   if(selected.includes(cursor.getDay())){
+    if(found===index)return formatDateLocal(cursor);
+    found++;
+   }
+   cursor.setDate(cursor.getDate()+1);
+  }
+  return formatDateLocal(startDate);
+ }
+
+ if(type==="semanal"){
+  const chosen=weekday===undefined||weekday===null?startDate.getDay():Number(weekday);
+  const difference=(chosen-startDate.getDay()+7)%7;
+  startDate.setDate(startDate.getDate()+difference+index*7);
+  return formatDateLocal(startDate);
+ }
+
+ const chosenDay=Number(monthDay||startDate.getDate());
+ let firstYear=startDate.getFullYear();
+ let firstMonth=startDate.getMonth();
+ if(startDate.getDate()>chosenDay)firstMonth++;
+ const targetMonth=firstMonth+index;
+ const target=new Date(firstYear,targetMonth,1,12);
+ const lastDay=new Date(target.getFullYear(),target.getMonth()+1,0,12).getDate();
+ target.setDate(Math.min(chosenDay,lastDay));
+ return formatDateLocal(target);
+}
+
+function parseParcels(debt){
+ let arr=debt.parcelas;
+ if(typeof arr==="string"){try{arr=JSON.parse(arr)}catch{arr=[]}}
+ if(!Array.isArray(arr))arr=[];
+ return arr.map((p,i)=>{
+  if(typeof p==="number"||typeof p==="string")p={valor:Number(p)};
+  p=p||{};
+  const value=num(p.valor??p.valor_parcela??p.valorParcela??debt.valor_parcela);
+  const paid=Boolean(p.paga||p.pago||p.quitada||p.status==="paga"||p.status==="pago"||p.status==="quitada");
+  const balance=p.saldo!==undefined?Math.max(0,num(p.saldo)):(paid?0:value);
+  const storedDays=Array.isArray(p.dias_semana)?p.dias_semana.map(Number):null;
+  return {
+   ...p,
+   numero:p.numero??p.parcela??i+1,
+   valor:value,
+   saldo:balance,
+   paga:paid||balance<=0,
+   data:p.data??p.vencimento??p.data_vencimento??dueDate(debt.data_inicio,debt.tipo,i,undefined,undefined,storedDays),
+   historico:Array.isArray(p.historico)?p.historico:[]
+  };
+ });
+}
+function debtBalance(d){return parseParcels(d).reduce((s,p)=>s+num(p.saldo),0)}
+function pendingCount(d){return parseParcels(d).filter(p=>p.saldo>0).length}
+function debtPaid(d){return Math.max(0,num(d.valor_total)-debtBalance(d))}
+function debtOverdue(d){return parseParcels(d).reduce((s,p)=>s+(p.saldo>0&&p.data<today()?p.saldo:0),0)}
+function historyOf(p){return Array.isArray(p.historico)?p.historico:[]}
+function renderAll(){renderDebts();renderMovements();renderInvestments();renderDashboard()}
+
+function renderDashboard(){
+ const income=movements.filter(m=>m.tipo==="entrada").reduce((s,m)=>s+num(m.valor),0);
+ const expenses=movements.filter(m=>m.tipo!=="entrada").reduce((s,m)=>s+num(m.valor),0);
+ const remaining=debts.reduce((s,d)=>s+debtBalance(d),0);
+ const invested=investments.reduce((s,i)=>s+num(i.valor_investido),0);
+ const expected=investments.filter(i=>!i.data_recebimento).reduce((s,i)=>s+num(i.lucro_previsto),0);
+
+ $("homeBalance").textContent=money(income-expenses);
+ $("homeDebt").textContent=money(remaining);
+ $("homeDebtDetail").textContent=money(remaining);
+ $("homeInvested").textContent=money(invested);
+ $("homeProfit").textContent=money(expected);
+ $("homeIncome").textContent=money(income);
+ $("homeExpenses").textContent=money(expenses);
+ $("movementIncome").textContent=money(income);
+ $("movementExpenses").textContent=money(expenses);
+ $("debtPageTotal").textContent=money(remaining);
+ $("debtPageCount").textContent=debts.length;
+ $("investmentTotal").textContent=money(invested);
+ $("investmentExpected").textContent=money(expected);
+ $("investmentReceived").textContent=money(investments.reduce((s,i)=>s+num(i.lucro_recebido),0));
+ $("investmentPending").textContent=investments.filter(i=>!i.data_recebimento).length;
+
+ const original=debts.reduce((s,d)=>s+num(d.valor_total),0);
+ const paid=Math.max(0,original-remaining);
+ $("debtProgress").style.width=(original?Math.min(100,paid/original*100):0)+"%";
+ $("debtProgressText").textContent=original?`${money(paid)} pagos de ${money(original)} do valor original`:"Adicione suas dívidas para começar.";
+
+ $("recentMovements").innerHTML=movements.slice(0,5).map(m=>`<div class="list-item"><div class="list-icon ${m.tipo==="entrada"?"green":"red"}">${m.tipo==="entrada"?"↙":"↗"}</div><div class="list-desc"><strong>${esc(m.descricao)}</strong><small>${dateBR(m.data)}</small></div><div class="list-amount ${m.tipo==="entrada"?"green":"red"}">${m.tipo==="entrada"?"+":"−"} ${money(m.valor)}</div></div>`).join("")||'<div class="empty">Nenhuma movimentação registrada.</div>';
+
+ $("recentInvestments").innerHTML=investments.slice(0,3).map(i=>`<div class="list-item"><div class="list-icon blue">◈</div><div class="list-desc"><strong>${esc(i.nome)}</strong><small>${i.data_recebimento?"Recebido":"Previsto para "+dateBR(i.data_prevista)}</small></div><div class="list-amount">${money(i.valor_investido)}</div></div>`).join("")||'<div class="empty">Nenhum investimento registrado.</div>';
+}
+
+function renderDebts(){
+ if(!debts.length){
+  $("debtsList").innerHTML='<div class="empty">Nenhuma dívida cadastrada.</div>';
+  $("debtDetail").style.display="none";
+  $("debtsOverview").style.display="block";
+  return;
+ }
+ $("debtsList").innerHTML=debts.map(d=>{
+  const late=debtOverdue(d),balance=debtBalance(d),paid=debtPaid(d);
+  return `<article class="card debt-card" role="button" tabindex="0" onclick="openDebt(${Number(d.id)})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDebt(${Number(d.id)})}">
+   <div class="debt-card-top"><div class="person-icon">♙</div><div><div class="debt-name">${esc(d.nome)}</div><div class="debt-caption">${pendingCount(d)} parcela(s) pendente(s) · ${String(d.tipo||"mensal").toUpperCase()}</div></div><div class="chevron">›</div></div>
+   <div class="debt-metrics">
+    <div><div class="debt-metric-label">Valor total</div><div class="debt-metric-value">${money(d.valor_total)}</div></div>
+    <div><div class="debt-metric-label">Valor em atraso</div><div class="debt-metric-value red">${money(late)}</div></div>
+    <div><div class="debt-metric-label">Valor pendente fora do atraso</div><div class="debt-metric-value yellow">${money(Math.max(0,balance-late))}</div></div>
+    <div><div class="debt-metric-label">Valor já pago</div><div class="debt-metric-value green">${money(paid)}</div></div>
+   </div><div class="click-note">Clique para abrir as parcelas e os pagamentos →</div>
+  </article>`;
+ }).join("");
+
+ if(selectedDebtId!==null&&debts.some(d=>Number(d.id)===Number(selectedDebtId)))renderDebtDetail();
+ else{
+  selectedDebtId=null;
+  $("debtDetail").style.display="none";
+  $("debtsOverview").style.display="block";
+ }
+}
+
+function openDebt(id){
+ selectedDebtId=id;
+ $("debtsOverview").style.display="none";
+ $("debtDetail").style.display="block";
+ renderDebtDetail();
+ window.scrollTo({top:0,behavior:"smooth"});
+}
+$("backToDebts").addEventListener("click",()=>{
+ selectedDebtId=null;
+ $("debtDetail").style.display="none";
+ $("debtsOverview").style.display="block";
+ renderDebts();
+ window.scrollTo({top:0,behavior:"smooth"});
+});
+
+function renderDebtDetail(){
+ const d=debts.find(x=>Number(x.id)===Number(selectedDebtId));
+ if(!d)return;
+ const parcels=parseParcels(d),late=debtOverdue(d),balance=debtBalance(d);
+
+ $("debtDetailContent").innerHTML=`
+ <div class="panel"><div class="panel-head"><div><h2>${esc(d.nome)}</h2><div class="muted small" style="margin-top:6px">${String(d.tipo||"mensal").toUpperCase()} · Início: ${dateBR(d.data_inicio)}</div></div><button class="btn danger smallbtn" onclick="deleteDebt(${Number(d.id)})">Excluir dívida</button></div>
+ <div class="detail-summary">
+  <div class="card"><div class="metric-label">Valor total</div><div class="metric-value">${money(d.valor_total)}</div></div>
+  <div class="card"><div class="metric-label">Em atraso</div><div class="metric-value red">${money(late)}</div></div>
+  <div class="card"><div class="metric-label">Pendente fora do atraso</div><div class="metric-value yellow">${money(Math.max(0,balance-late))}</div></div>
+  <div class="card"><div class="metric-label">Já pago</div><div class="metric-value green">${money(debtPaid(d))}</div></div>
+ </div>
+ <div class="panel-head"><h2>Parcelas de ${esc(d.nome)}</h2><button class="btn secondary smallbtn" onclick="increaseInstallments(${Number(d.id)})">Aumentar parcelas</button></div>
+ <div class="table-wrap"><table><thead><tr><th>Parcela</th><th>Vencimento</th><th>Valor original</th><th>Saldo</th><th>Status</th><th>Ações</th></tr></thead><tbody>
+ ${parcels.map((p,i)=>`<tr><td>${esc(p.numero)}</td><td>${dateBR(p.data)}</td><td>${money(p.valor)}</td><td>${money(p.saldo)}</td><td><span class="status ${p.saldo<=0?"ok":p.data<today()?"late":"pending"}">${p.saldo<=0?"Paga":p.data<today()?"Em atraso":"Pendente"}</span></td><td>${p.saldo>0?`<button class="btn smallbtn" onclick="payInstallment(${Number(d.id)},${i},'quitar')">Quitar</button> <button class="btn secondary smallbtn" onclick="payInstallment(${Number(d.id)},${i},'parcial')">Parcial</button> <button class="btn bluebtn smallbtn" onclick="payInstallment(${Number(d.id)},${i},'juros')">Só juros</button> <button class="btn secondary smallbtn" onclick="showHistory(${Number(d.id)},${i})">Histórico</button>`:`<button class="btn secondary smallbtn" onclick="showHistory(${Number(d.id)},${i})">Histórico</button>`}</td></tr>`).join("")}
+ </tbody></table></div>
+ <div class="actions"><button class="btn secondary smallbtn" onclick="showDebtHistory(${Number(d.id)})">Ver histórico de pagamentos</button></div></div>`;
+}
+
+/* Cadastro: os dias selecionados são armazenados dentro de cada parcela. */
+$("debtForm").addEventListener("submit",async e=>{
+ e.preventDefault();
+ if(!currentUser)return;
+
+ const name=$("debtName").value.trim();
+ const type=$("debtType").value;
+ const installment=Number(num($("debtInstallment").value).toFixed(2));
+ const start=$("debtStart").value;
+ const count=Math.floor(num($("debtCount").value));
+ const weekday=Number($("debtWeekday").value);
+ const monthDay=Number($("debtMonthDay").value);
+ const total=Number((installment*count).toFixed(2));
+ const selectedDays=getSelectedDailyDays();
+
+ if(!name||installment<=0||count<1||!start)return alert("Confira os valores informados.");
+ if(type==="diaria"&&!selectedDays.length)return alert("Marque pelo menos um dia da semana para a cobrança diária.");
+
+ if(debts.some(d=>String(d.nome).trim().toLocaleLowerCase("pt-BR")===name.toLocaleLowerCase("pt-BR"))){
+  return alert("Já existe uma dívida cadastrada com esse nome. Abra o cartão dessa pessoa para acompanhar as parcelas.");
+ }
+
+ const parcels=[];
+ for(let i=0;i<count;i++){
+  parcels.push({
+   numero:i+1,
+   valor:installment,
+   saldo:installment,
+   paga:false,
+   data:dueDate(start,type,i,weekday,monthDay,type==="diaria"?selectedDays:null),
+   ...(type==="diaria"?{dias_semana:selectedDays}:{}),
+   ...(type==="semanal"?{dia_semana:weekday}:{}),
+   ...(type==="mensal"?{dia_mes:monthDay}:{}),
+   historico:[]
+  });
+ }
+
+ const row={
+  user_id:currentUser.id,
+  nome:name,
+  valor_total:total,
+  tipo:type,
+  valor_parcela:installment,
+  data_inicio:start,
+  dias:type==="diaria"?selectedDays.length:type==="semanal"?7:30,
+  parcelas:parcels
+ };
+
+ const botao=e.submitter;
+ if(botao){botao.disabled=true;botao.textContent="Salvando..."}
+
+ try{
+  const {error}=await supabaseClient.from("dividas").insert(row);
+  if(error)throw error;
+  alert("Dívida cadastrada com sucesso!");
+  e.target.reset();
+  $("debtStart").value=today();
+  $("debtMonthDay").value="5";
+  $("debtWeekday").value="6";
+  document.querySelectorAll(".daily-weekday").forEach(x=>x.checked=true);
+  updatePaymentSchedule();
+  updateDebtTotal();
+  await carregarDados();
+ }catch(err){
+  alert("Erro ao salvar dívida: "+err.message);
+ }finally{
+  if(botao){botao.disabled=false;botao.textContent="Salvar dívida"}
+ }
+});
+
+$("refreshDebts").addEventListener("click",carregarDados);
+
+async function saveDebt(d,newParcels){
+ const {error}=await supabaseClient.from("dividas").update({parcelas:newParcels}).eq("id",d.id).eq("user_id",currentUser.id);
+ if(error)throw error;
+ await carregarDados();
+}
+
+async function payInstallment(debtId,index,kind){
+ const d=debts.find(x=>Number(x.id)===Number(debtId));
+ if(!d)return;
+ const parcels=parseParcels(d),p=parcels[index];
+ if(!p)return;
+
+ let amount;
+ if(kind==="quitar")amount=p.saldo;
+ else{
+  const answer=prompt((kind==="juros"?"Quanto pagou somente de juros?":"Quanto pagou nesta parcela?")+" Saldo atual: "+money(p.saldo));
+  if(answer===null)return;
+  amount=parseMoney(answer);
+  if(!Number.isFinite(amount)||amount<=0)return alert("Informe um valor válido maior que zero.");
+  if(kind==="parcial"&&amount>p.saldo)return alert("O pagamento parcial não pode ser maior que o saldo da parcela.");
+ }
+ if(kind==="quitar"&&!confirm("Confirmar pagamento de "+money(amount)+" para quitar esta parcela?"))return;
+ if(kind==="parcial"&&!confirm("Registrar pagamento parcial de "+money(amount)+"?"))return;
+ if(kind==="juros"&&!confirm("Registrar "+money(amount)+" como juros pagos, sem reduzir o saldo da parcela?"))return;
+
+ const updated=parcels.map((item,i)=>{
+  if(i!==index)return item;
+  const hist=[...historyOf(item),{tipo:kind==="juros"?"juros":kind==="parcial"?"parcial":"quitar",valor:Number(amount.toFixed(2)),data:today(),observacao:kind==="juros"?"Juros pagos; saldo principal mantido":""}];
+  if(kind==="juros")return {...item,historico:hist};
+  const newBalance=kind==="quitar"?0:Math.max(0,Number((item.saldo-amount).toFixed(2)));
+  return {...item,saldo:newBalance,paga:newBalance<=0,historico:hist};
+ });
+ try{await saveDebt(d,updated)}catch(err){alert("Erro ao registrar pagamento: "+err.message)}
+}
+
+async function increaseInstallments(id){
+ const d=debts.find(x=>Number(x.id)===Number(id));
+ if(!d)return;
+ const parcels=parseParcels(d),open=parcels.filter(p=>p.saldo>0);
+ if(!open.length)return alert("Esta dívida já está quitada.");
+
+ const answer=prompt("Quantas parcelas deseja ter daqui para frente? Há "+open.length+" parcelas pendentes.");
+ if(answer===null)return;
+ const count=Math.floor(Number(answer));
+ if(!Number.isFinite(count)||count<open.length||count<1)return alert("Informe uma quantidade igual ou maior que as parcelas pendentes.");
+
+ const balance=debtBalance(d),per=Number((balance/count).toFixed(2));
+ let remain=balance;
+ const replanned=[];
+ const firstDate=open[0].data||today();
+
+ // Recupera a programação original, inclusive os dias escolhidos na cobrança diária.
+ const firstWithDays=open.find(p=>Array.isArray(p.dias_semana)&&p.dias_semana.length);
+ const dailyDays=firstWithDays?firstWithDays.dias_semana.map(Number):null;
+ const weeklyDay=open.find(p=>p.dia_semana!==undefined)?.dia_semana;
+ const monthlyDay=open.find(p=>p.dia_mes!==undefined)?.dia_mes;
+
+ for(let i=0;i<count;i++){
+  const value=i===count-1?Number(remain.toFixed(2)):Math.min(per,remain);
+  replanned.push({
+   numero:i+1,
+   valor:value,
+   saldo:value,
+   paga:false,
+   data:dueDate(firstDate,d.tipo,i,weeklyDay,monthlyDay,dailyDays),
+   ...(dailyDays?{dias_semana:dailyDays}:{}),
+   ...(weeklyDay!==undefined?{dia_semana:weeklyDay}:{}),
+   ...(monthlyDay!==undefined?{dia_mes:monthlyDay}:{}),
+   historico:[{tipo:"reparcelamento",data:today(),observacao:"Saldo redividido em novas parcelas"}]
+  });
+  remain=Number((remain-value).toFixed(2));
+ }
+
+ if(!confirm("O saldo de "+money(balance)+" será dividido em "+count+" novas parcelas. O histórico individual das parcelas anteriores será substituído na lista de parcelas. Continuar?"))return;
+ try{await saveDebt(d,replanned)}catch(err){alert("Erro ao alterar parcelas: "+err.message)}
+}
+
+function showHistory(id,index){
+ const d=debts.find(x=>Number(x.id)===Number(id));
+ if(!d)return;
+ const p=parseParcels(d)[index],h=historyOf(p);
+ alert(h.length?h.map(x=>`${dateBR(x.data)} — ${x.tipo}: ${money(x.valor||0)}${x.observacao?" ("+x.observacao+")":""}`).join("\n"):"Nenhum pagamento registrado nesta parcela.");
+}
+function showDebtHistory(id){
+ const d=debts.find(x=>Number(x.id)===Number(id));
+ if(!d)return;
+ const all=parseParcels(d).flatMap(p=>historyOf(p).map(h=>({...h,numero:p.numero})));
+ alert(all.length?all.map(x=>`Parcela ${x.numero} — ${dateBR(x.data)} — ${x.tipo}: ${money(x.valor||0)}${x.observacao?" ("+x.observacao+")":""}`).join("\n"):"Nenhum pagamento registrado.");
+}
+async function deleteDebt(id){
+ const d=debts.find(x=>Number(x.id)===Number(id));
+ if(!d)return;
+ if(!confirm(`Excluir a dívida de "${d.nome}"? Essa ação remove esse registro.`))return;
+ const {error}=await supabaseClient.from("dividas").delete().eq("id",id).eq("user_id",currentUser.id);
+ if(error)return alert("Erro ao excluir dívida: "+error.message);
+ selectedDebtId=null;
+ await carregarDados();
+}
+
+$("movementForm").addEventListener("submit",async e=>{
+ e.preventDefault();
+ if(!currentUser)return;
+ const row={
+  user_id:currentUser.id,
+  descricao:$("movementDescription").value.trim(),
+  valor:num($("movementAmount").value),
+  data:$("movementDate").value,
+  tipo:$("movementType").value
+ };
+ if(row.valor<=0)return alert("Informe um valor maior que zero.");
+ const {error}=await supabaseClient.from("movimentacoes").insert(row);
+ if(error)return alert("Erro ao salvar movimentação: "+error.message);
+ e.target.reset();
+ $("movementDate").value=today();
+ await carregarDados();
+});
+
+function renderMovements(){
+ $("movementsTable").innerHTML=movements.map(m=>`<tr><td>${dateBR(m.data)}</td><td>${esc(m.descricao)}</td><td><span class="status ${m.tipo==="entrada"?"ok":"late"}">${m.tipo==="entrada"?"Entrada":"Saída"}</span></td><td class="${m.tipo==="entrada"?"green":"red"}">${money(m.valor)}</td><td><button class="btn danger smallbtn" onclick="deleteMovement(${Number(m.id)})">Excluir</button></td></tr>`).join("")||'<tr><td colspan="5" class="empty">Nenhuma movimentação cadastrada.</td></tr>';
+}
+async function deleteMovement(id){
+ if(!confirm("Deseja excluir esta movimentação?"))return;
+ const {error}=await supabaseClient.from("movimentacoes").delete().eq("id",id).eq("user_id",currentUser.id);
+ if(error)return alert(error.message);
+ await carregarDados();
+}
+
+/* Investimentos: usa colunas já utilizadas pelo sistema. */
+$("investmentForm").addEventListener("submit",async e=>{
+ e.preventDefault();
+ if(!currentUser)return;
+ const localInvestimento=$("investmentPlace").value.trim();
+ const row={
+  user_id:currentUser.id,
+  nome:localInvestimento,
+  valor_investido:num($("investmentAmount").value),
+  lucro_previsto:num($("investmentProfit").value),
+  data_prevista:$("investmentDue").value,
+  observacao:$("investmentNotes").value.trim()||null
+ };
+ if(!row.nome)return alert("Informe o local ou a plataforma.");
+ if(!row.data_prevista)return alert("Informe a data prevista para retorno.");
+ if(row.valor_investido<=0||row.lucro_previsto<0)return alert("Confira os valores do investimento.");
+
+ const botao=e.submitter;
+ if(botao){botao.disabled=true;botao.textContent="Salvando..."}
+ try{
+  const {error}=await supabaseClient.from("investimentos").insert(row);
+  if(error)throw error;
+  alert("Investimento salvo com sucesso!");
+  e.target.reset();
+  $("investmentDue").value=today();
+  await carregarDados();
+ }catch(err){
+  alert("Erro ao salvar investimento: "+err.message);
+ }finally{
+  if(botao){botao.disabled=false;botao.textContent="Salvar investimento"}
+ }
+});
+
+function renderInvestments(){
+ $("investmentsTable").innerHTML=investments.map(i=>`<tr><td><strong>${esc(i.nome)}</strong>${i.observacao?`<div class="muted small">${esc(i.observacao)}</div>`:""}</td><td>${money(i.valor_investido)}</td><td class="green">${money(i.lucro_previsto)}</td><td>${dateBR(i.data_prevista)}</td><td><span class="status ${i.data_recebimento?"ok":"pending"}">${i.data_recebimento?"Recebido":"Pendente"}</span></td><td>${!i.data_recebimento?`<button class="btn smallbtn" onclick="receiveInvestment(${Number(i.id)})">Registrar retorno</button> `:""}<button class="btn danger smallbtn" onclick="deleteInvestment(${Number(i.id)})">Excluir</button></td></tr>`).join("")||'<tr><td colspan="6" class="empty">Nenhum investimento cadastrado.</td></tr>';
+}
+async function receiveInvestment(id){
+ const i=investments.find(x=>Number(x.id)===Number(id));
+ if(!i)return;
+ const a=prompt("Informe o lucro efetivamente recebido (R$). Digite 0 se não houve lucro:",String(num(i.lucro_previsto).toFixed(2)).replace(".",","));
+ if(a===null)return;
+ const profit=parseMoney(a);
+ if(!Number.isFinite(profit)||profit<0)return alert("Informe um lucro válido, igual ou maior que zero.");
+ const date=prompt("Data do recebimento (AAAA-MM-DD):",today());
+ if(date===null)return;
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return alert("Use o formato AAAA-MM-DD.");
+ const {error}=await supabaseClient.from("investimentos").update({data_recebimento:date,lucro_recebido:profit}).eq("id",id).eq("user_id",currentUser.id);
+ if(error)return alert("Erro ao registrar recebimento: "+error.message);
+ await carregarDados();
+}
+async function deleteInvestment(id){
+ if(!confirm("Deseja excluir este investimento?"))return;
+ const {error}=await supabaseClient.from("investimentos").delete().eq("id",id).eq("user_id",currentUser.id);
+ if(error)return alert("Erro ao excluir investimento: "+error.message);
+ await carregarDados();
+}
 </script>
 </body>
 </html>
-    
