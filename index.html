@@ -564,7 +564,6 @@ $("backToDebts").addEventListener("click",()=>{
  window.scrollTo({top:0,behavior:"smooth"});
 });
 
-
 function renderDebtDetail(){
  const d=debts.find(x=>Number(x.id)===Number(selectedDebtId));
  if(!d)return;
@@ -575,7 +574,6 @@ function renderDebtDetail(){
 
  $("debtDetailContent").innerHTML=`
  <div class="panel">
-
    <div style="margin-bottom:16px">
      <h2 style="margin:0;font-size:20px">${esc(d.nome)}</h2>
      <div class="muted small" style="margin-top:6px">
@@ -584,55 +582,25 @@ function renderDebtDetail(){
    </div>
 
    <div style="display:flex;flex-wrap:wrap;gap:8px;margin:0 0 20px">
-     <button type="button" class="btn secondary smallbtn"
-       onclick="editDebt(${Number(d.id)})">
-       ✏️ Editar dívida
-     </button>
-     <button type="button" class="btn danger smallbtn"
-       onclick="deleteDebt(${Number(d.id)})">
-       🗑️ Excluir dívida
-     </button>
+     <button type="button" class="btn secondary smallbtn" onclick="editDebt(${Number(d.id)})">✏️ Editar dívida</button>
+     <button type="button" class="btn danger smallbtn" onclick="deleteDebt(${Number(d.id)})">🗑️ Excluir dívida</button>
    </div>
 
    <div class="detail-summary">
-     <div class="card">
-       <div class="metric-label">Valor total</div>
-       <div class="metric-value">${money(d.valor_total)}</div>
-     </div>
-     <div class="card">
-       <div class="metric-label">Em atraso</div>
-       <div class="metric-value red">${money(late)}</div>
-     </div>
-     <div class="card">
-       <div class="metric-label">Pendente fora do atraso</div>
-       <div class="metric-value yellow">${money(Math.max(0,balance-late))}</div>
-     </div>
-     <div class="card">
-       <div class="metric-label">Já pago</div>
-       <div class="metric-value green">${money(debtPaid(d))}</div>
-     </div>
+     <div class="card"><div class="metric-label">Valor total</div><div class="metric-value">${money(d.valor_total)}</div></div>
+     <div class="card"><div class="metric-label">Em atraso</div><div class="metric-value red">${money(late)}</div></div>
+     <div class="card"><div class="metric-label">Pendente fora do atraso</div><div class="metric-value yellow">${money(Math.max(0,balance-late))}</div></div>
+     <div class="card"><div class="metric-label">Já pago</div><div class="metric-value green">${money(debtPaid(d))}</div></div>
    </div>
 
    <div class="panel-head" style="flex-wrap:wrap">
      <h2>Parcelas de ${esc(d.nome)}</h2>
-     <button type="button" class="btn secondary smallbtn"
-       onclick="increaseInstallments(${Number(d.id)})">
-       Aumentar parcelas
-     </button>
+     <button type="button" class="btn secondary smallbtn" onclick="increaseInstallments(${Number(d.id)})">Aumentar parcelas</button>
    </div>
 
    <div class="table-wrap">
      <table>
-       <thead>
-         <tr>
-           <th>Parcela</th>
-           <th>Vencimento</th>
-           <th>Valor original</th>
-           <th>Saldo</th>
-           <th>Status</th>
-           <th>Ações</th>
-         </tr>
-       </thead>
+       <thead><tr><th>Parcela</th><th>Vencimento</th><th>Valor original</th><th>Saldo</th><th>Status</th><th>Ações</th></tr></thead>
        <tbody>
          ${parcels.map((p,i)=>`
            <tr>
@@ -640,24 +608,15 @@ function renderDebtDetail(){
              <td>${dateBR(p.data)}</td>
              <td>${money(p.valor)}</td>
              <td>${money(p.saldo)}</td>
-             <td>
-               <span class="status ${p.saldo<=0?"ok":p.data<today()?"late":"pending"}">
-                 ${p.saldo<=0?"Paga":p.data<today()?"Em atraso":"Pendente"}
-               </span>
-             </td>
+             <td><span class="status ${p.saldo<=0?"ok":p.data<today()?"late":"pending"}">${p.saldo<=0?"Paga":p.data<today()?"Em atraso":"Pendente"}</span></td>
              <td>
                ${p.saldo>0?`
-                 <button type="button" class="btn smallbtn"
-                   onclick="payInstallment(${Number(d.id)},${i},'quitar')">Quitar</button>
-                 <button type="button" class="btn secondary smallbtn"
-                   onclick="payInstallment(${Number(d.id)},${i},'parcial')">Parcial</button>
-                 <button type="button" class="btn bluebtn smallbtn"
-                   onclick="payInstallment(${Number(d.id)},${i},'juros')">Só juros</button>
-                 <button type="button" class="btn secondary smallbtn"
-                   onclick="showHistory(${Number(d.id)},${i})">Histórico</button>
+                 <button type="button" class="btn smallbtn" onclick="payInstallment(${Number(d.id)},${i},'quitar')">Quitar</button>
+                 <button type="button" class="btn secondary smallbtn" onclick="payInstallment(${Number(d.id)},${i},'parcial')">Parcial</button>
+                 <button type="button" class="btn bluebtn smallbtn" onclick="payInstallment(${Number(d.id)},${i},'juros')">Só juros</button>
+                 <button type="button" class="btn secondary smallbtn" onclick="showHistory(${Number(d.id)},${i})">Histórico</button>
                `:`
-                 <button type="button" class="btn secondary smallbtn"
-                   onclick="showHistory(${Number(d.id)},${i})">Histórico</button>
+                 <button type="button" class="btn secondary smallbtn" onclick="showHistory(${Number(d.id)},${i})">Histórico</button>
                `}
              </td>
            </tr>
@@ -665,40 +624,219 @@ function renderDebtDetail(){
        </tbody>
      </table>
    </div>
-
-   <div class="actions">
-     <button type="button" class="btn secondary smallbtn"
-       onclick="showDebtHistory(${Number(d.id)})">
-       Ver histórico de pagamentos
-     </button>
-   </div>
-
+   <div class="actions"><button type="button" class="btn secondary smallbtn" onclick="showDebtHistory(${Number(d.id)})">Ver histórico de pagamentos</button></div>
  </div>`;
 }
 
+/*
+ * NOVA EDIÇÃO COMPLETA DA DÍVIDA
+ * Permite editar nome, cobrança, valor por parcela, quantidade e datas.
+ * Mantém o histórico salvo nas parcelas existentes.
+ */
 async function editDebt(id){
  const d=debts.find(x=>Number(x.id)===Number(id));
- if(!d)return;
+ if(!d||!currentUser)return;
+
+ const oldParcels=parseParcels(d);
+ const oldType=d.tipo||"mensal";
+ const oldInstallment=num(d.valor_parcela)||num(oldParcels[0]?.valor)||0;
+ const paidIndexes=oldParcels
+  .map((p,i)=>p.saldo<=0?i:-1)
+  .filter(i=>i>=0);
+ const minimumCount=paidIndexes.length?Math.max(...paidIndexes)+1:1;
+
  const newName=prompt("Nome da pessoa ou credor:",d.nome);
  if(newName===null)return;
  if(!newName.trim())return alert("O nome não pode ficar vazio.");
- const parcels=parseParcels(d);
- const firstPending=parcels.find(p=>p.saldo>0);
- let updated=parcels;
- if(firstPending){
-  const newDate=prompt("Data do próximo vencimento (AAAA-MM-DD):",firstPending.data);
-  if(newDate===null)return;
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(newDate)||Number.isNaN(parseLocalDate(newDate).getTime()))return alert("Informe uma data válida no formato AAAA-MM-DD.");
-  const differenceDays=Math.round((parseLocalDate(newDate)-parseLocalDate(firstPending.data))/86400000);
-  const firstIndex=parcels.indexOf(firstPending);
-  updated=parcels.map((p,i)=>i>=firstIndex&&p.saldo>0?{...p,data:addDays(p.data,differenceDays)}:p);
+
+ const typeHelp="Digite o tipo de cobrança:\nmensal = mensal\nsemanal = semanal\ndiaria = dias escolhidos da semana";
+ const typeAnswer=prompt(typeHelp,oldType);
+ if(typeAnswer===null)return;
+ const newType=typeAnswer.trim().toLowerCase();
+ if(!["mensal","semanal","diaria"].includes(newType)){
+  return alert("Tipo inválido. Digite mensal, semanal ou diaria.");
  }
+
+ const installmentAnswer=prompt(
+  "Novo valor de cada parcela (R$):",
+  String(oldInstallment.toFixed(2)).replace(".",",")
+ );
+ if(installmentAnswer===null)return;
+ const newInstallment=parseMoney(installmentAnswer);
+ if(!Number.isFinite(newInstallment)||newInstallment<=0){
+  return alert("Informe um valor de parcela válido maior que zero.");
+ }
+
+ const defaultCount=oldParcels.length||Math.max(1,Math.round(num(d.valor_total)/newInstallment));
+ const countAnswer=prompt(
+  "Nova quantidade TOTAL de parcelas.\nTotal calculado = valor da parcela × quantidade.\nHá parcelas quitadas que precisam ser preservadas.",
+  String(defaultCount)
+ );
+ if(countAnswer===null)return;
+ const newCount=Number(countAnswer);
+ if(!Number.isInteger(newCount)||newCount<1){
+  return alert("Informe uma quantidade inteira de parcelas maior que zero.");
+ }
+ if(newCount<minimumCount){
+  return alert("Não é possível reduzir para "+newCount+" parcela(s), pois isso removeria parcelas já quitadas e seu histórico. A quantidade mínima segura é "+minimumCount+".");
+ }
+
+ const firstPending=oldParcels.find(p=>p.saldo>0);
+ const defaultDate=firstPending?.data||d.data_inicio||today();
+ const dateAnswer=prompt(
+  "Data da próxima parcela pendente ou da primeira parcela (AAAA-MM-DD):",
+  String(defaultDate).slice(0,10)
+ );
+ if(dateAnswer===null)return;
+ const validDate=/^\d{4}-\d{2}-\d{2}$/.test(dateAnswer)&&!Number.isNaN(parseLocalDate(dateAnswer).getTime())&&formatDateLocal(parseLocalDate(dateAnswer))===dateAnswer;
+ if(!validDate)return alert("Data inválida. Use o formato AAAA-MM-DD.");
+
+ let newWeekday=d.dia_semana;
+ let newMonthDay=d.dia_mes;
+ let newDailyDays=null;
+
+ if(newType==="semanal"){
+  const existingWeekly=oldParcels.find(p=>p.dia_semana!==undefined)?.dia_semana;
+  const defaultWeekday=existingWeekly!==undefined?Number(existingWeekly):6;
+  const weekdayNames={0:"Domingo",1:"Segunda-feira",2:"Terça-feira",3:"Quarta-feira",4:"Quinta-feira",5:"Sexta-feira",6:"Sábado"};
+  const weekdayAnswer=prompt(
+   "Dia da semana para pagar:\n0=Domingo, 1=Segunda, 2=Terça, 3=Quarta, 4=Quinta, 5=Sexta, 6=Sábado",
+   String(defaultWeekday)
+  );
+  if(weekdayAnswer===null)return;
+  newWeekday=Number(weekdayAnswer);
+  if(!Number.isInteger(newWeekday)||newWeekday<0||newWeekday>6){
+   return alert("Dia da semana inválido. Use um número de 0 a 6.");
+  }
+ }
+
+ if(newType==="mensal"){
+  const existingMonthly=oldParcels.find(p=>p.dia_mes!==undefined)?.dia_mes;
+  const defaultMonthDay=Number(existingMonthly||parseLocalDate(dateAnswer).getDate());
+  const monthDayAnswer=prompt("Qual dia do mês vence a parcela? (1 a 31)",String(defaultMonthDay));
+  if(monthDayAnswer===null)return;
+  newMonthDay=Number(monthDayAnswer);
+  if(!Number.isInteger(newMonthDay)||newMonthDay<1||newMonthDay>31){
+   return alert("O dia do mês precisa ser um número de 1 a 31.");
+  }
+ }
+
+ if(newType==="diaria"){
+  const existingDaily=oldParcels.find(p=>Array.isArray(p.dias_semana)&&p.dias_semana.length)?.dias_semana;
+  const defaultDaily=existingDaily?.join(",")||"1,2,3,4,5,6,0";
+  const daysAnswer=prompt(
+   "Digite os dias da semana separados por vírgula:\n0=Domingo, 1=Segunda, 2=Terça, 3=Quarta, 4=Quinta, 5=Sexta, 6=Sábado",
+   defaultDaily
+  );
+  if(daysAnswer===null)return;
+  newDailyDays=[...new Set(daysAnswer.split(",").map(x=>Number(x.trim())))].sort((a,b)=>a-b);
+  if(!newDailyDays.length||newDailyDays.some(day=>!Number.isInteger(day)||day<0||day>6)){
+   return alert("Dias inválidos. Use números de 0 a 6 separados por vírgula, por exemplo: 1,3,5.");
+  }
+ }
+
+ const total=Number((newInstallment*newCount).toFixed(2));
+ const confirmed=confirm(
+  "Confirme as alterações:\n\n"+
+  "Nome: "+newName.trim()+"\n"+
+  "Cobrança: "+newType+"\n"+
+  "Valor por parcela: "+money(newInstallment)+"\n"+
+  "Quantidade: "+newCount+"\n"+
+  "Novo valor total: "+money(total)+"\n"+
+  "Data inicial da nova programação: "+dateBR(dateAnswer)+"\n\n"+
+  "Os históricos existentes serão mantidos. As parcelas não quitadas terão valores e datas recalculados.\n\n"+
+  "Deseja salvar?"
+ );
+ if(!confirmed)return;
+
+ /*
+  * Reorganiza as parcelas sem apagar o histórico já gravado.
+  * Parcelas quitadas mantêm a data e o histórico.
+  * Parcelas abertas recalculam o saldo considerando o principal
+  * já pago, conforme o saldo atual da parcela antiga.
+  */
+ const rebuilt=[];
+ let pendingScheduleIndex=0;
+
+ for(let i=0;i<newCount;i++){
+  const old=oldParcels[i]||null;
+  const isFullyPaid=Boolean(old&&old.saldo<=0);
+  const oldValue=old?num(old.valor):0;
+  const oldBalance=old?Math.max(0,num(old.saldo)):0;
+  const principalAlreadyPaid=old?Math.max(0,oldValue-oldBalance):0;
+
+  let newBalance;
+  let newDate;
+
+  if(isFullyPaid){
+   newBalance=0;
+   newDate=old.data;
+  }else{
+   newBalance=Math.max(0,Number((newInstallment-principalAlreadyPaid).toFixed(2)));
+   newDate=dueDate(
+    dateAnswer,
+    newType,
+    pendingScheduleIndex,
+    newType==="semanal"?newWeekday:undefined,
+    newType==="mensal"?newMonthDay:undefined,
+    newType==="diaria"?newDailyDays:null
+   );
+   pendingScheduleIndex++;
+  }
+
+  const oldHistory=old?historyOf(old).map(entry=>({...entry})):[];
+  const parcel={
+   ...(old||{}),
+   numero:i+1,
+   valor:newInstallment,
+   saldo:newBalance,
+   paga:newBalance<=0,
+   data:newDate,
+   historico:oldHistory
+  };
+
+  delete parcel.dia_semana;
+  delete parcel.dia_mes;
+  delete parcel.dias_semana;
+
+  if(newType==="semanal")parcel.dia_semana=newWeekday;
+  if(newType==="mensal")parcel.dia_mes=newMonthDay;
+  if(newType==="diaria")parcel.dias_semana=[...newDailyDays];
+
+  rebuilt.push(parcel);
+ }
+
+ const row={
+  nome:newName.trim(),
+  tipo:newType,
+  valor_parcela:newInstallment,
+  valor_total:total,
+  data_inicio:dateAnswer,
+  dias:newType==="diaria"?newDailyDays.length:newType==="semanal"?7:30,
+  parcelas:rebuilt
+ };
+
  try{
-  const {error}=await supabaseClient.from("dividas").update({nome:newName.trim(),parcelas:updated}).eq("id",id).eq("user_id",currentUser.id);
+  const {error}=await supabaseClient
+   .from("dividas")
+   .update(row)
+   .eq("id",id)
+   .eq("user_id",currentUser.id);
+
   if(error)throw error;
-  alert("Dívida atualizada com sucesso!");
+
+  alert(
+   "Dívida atualizada com sucesso!\n\n"+
+   "Novo total: "+money(total)+"\n"+
+   "Quantidade: "+newCount+" parcela(s).\n"+
+   "Os históricos das parcelas existentes foram mantidos."
+  );
+
+  selectedDebtId=id;
   await carregarDados();
- }catch(err){alert("Erro ao editar dívida: "+err.message)}
+ }catch(err){
+  alert("Erro ao editar dívida: "+err.message);
+ }
 }
 
 $("debtForm").addEventListener("submit",async e=>{
