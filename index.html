@@ -509,10 +509,27 @@ function parseParcels(debt){
   };
  });
 }
-function debtBalance(d){return parseParcels(d).reduce((s,p)=>s+num(p.saldo),0)}
-function pendingCount(d){return parseParcels(d).filter(p=>p.saldo>0).length}
 
-// Calcula o valor total já pago considerando principal abatido E todos os juros pagos no histórico
+// O saldo devedor real (Pendente fora do atraso + Em atraso) considera apenas as parcelas originais principais pendentes
+function debtBalance(d){
+ const originalInstallment = num(d.valor_parcela);
+ const parcels = parseParcels(d);
+ // Soma o saldo apenas das parcelas originais principais (ignorando parcelas extras de juros criadas no fim)
+ return parcels.reduce((s,p)=>{
+  const isInterestExtra = historyOf(p).some(h=>String(h.tipo||"").toLowerCase()==="juros_extra");
+  return s + (isInterestExtra ? 0 : num(p.saldo));
+ },0);
+}
+
+function pendingCount(d){
+ const parcels = parseParcels(d);
+ return parcels.filter(p=>{
+  const isInterestExtra = historyOf(p).some(h=>String(h.tipo||"").toLowerCase()==="juros_extra");
+  return !isInterestExtra && p.saldo > 0;
+ }).length;
+}
+
+// Soma tudo o que já foi pago no total (cada pagamento parcial, quitação ou juro pago)
 function debtPaid(d){
  const parcels = parseParcels(d);
  let totalPaid = 0;
@@ -525,9 +542,11 @@ function debtPaid(d){
  return totalPaid;
 }
 
-// O atraso só conta se a parcela tem saldo, está vencida E NÃO teve juros pagos (já que o juro pago joga o vencimento para frente)
+// O atraso considera apenas parcelas principais com saldo vencidas e sem juros pagos
 function debtOverdue(d){
  return parseParcels(d).reduce((s,p)=>{
+  const isInterestExtra = historyOf(p).some(h=>String(h.tipo||"").toLowerCase()==="juros_extra");
+  if(isInterestExtra) return s;
   const hasInterestOnly = historyOf(p).some(h=>String(h.tipo||"").toLowerCase()==="juros");
   const isLate = p.saldo>0 && p.data<today() && !hasInterestOnly;
   return s + (isLate ? p.saldo : 0);
@@ -996,8 +1015,10 @@ $("debtForm").addEventListener("submit",async e=>{
 $("refreshDebts").addEventListener("click",carregarDados);
 
 async function saveDebt(d,newParcels){
- const totalNew = newParcels.reduce((s, p) => s + num(p.valor), 0);
- const {error}=await supabaseClient.from("dividas").update({parcelas:newParcels,valor_total:Number(totalNew.toFixed(2))}).eq("id",d.id).eq("user_id",currentUser.id);
+ // Mantém o valor_total original da dívida intacto (ex: 980), sem somar o valor das parcelas extras de juros inseridas ao final
+ const originalValues = parseParcels(d).filter(p => !historyOf(p).some(h => String(h.tipo||"").toLowerCase()==="juros_extra"));
+ const fixedTotal = originalValues.reduce((s, p) => s + num(p.valor), 0);
+ const {error}=await supabaseClient.from("dividas").update({parcelas:newParcels,valor_total:Number(fixedTotal.toFixed(2))}).eq("id",d.id).eq("user_id",currentUser.id);
  if(error)throw error;
  await carregarDados();
 }
