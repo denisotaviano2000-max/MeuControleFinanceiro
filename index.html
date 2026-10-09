@@ -510,11 +510,9 @@ function parseParcels(debt){
  });
 }
 
-// O saldo devedor real (Pendente fora do atraso + Em atraso) considera apenas as parcelas originais principais pendentes
+// O saldo devedor principal considera APENAS as parcelas originais da dívida, ignorando parcelas extras de juros inseridas no final
 function debtBalance(d){
- const originalInstallment = num(d.valor_parcela);
  const parcels = parseParcels(d);
- // Soma o saldo apenas das parcelas originais principais (ignorando parcelas extras de juros criadas no fim)
  return parcels.reduce((s,p)=>{
   const isInterestExtra = historyOf(p).some(h=>String(h.tipo||"").toLowerCase()==="juros_extra");
   return s + (isInterestExtra ? 0 : num(p.saldo));
@@ -1015,7 +1013,6 @@ $("debtForm").addEventListener("submit",async e=>{
 $("refreshDebts").addEventListener("click",carregarDados);
 
 async function saveDebt(d,newParcels){
- // Mantém o valor_total original da dívida intacto (ex: 980), sem somar o valor das parcelas extras de juros inseridas ao final
  const originalValues = parseParcels(d).filter(p => !historyOf(p).some(h => String(h.tipo||"").toLowerCase()==="juros_extra"));
  const fixedTotal = originalValues.reduce((s, p) => s + num(p.valor), 0);
  const {error}=await supabaseClient.from("dividas").update({parcelas:newParcels,valor_total:Number(fixedTotal.toFixed(2))}).eq("id",d.id).eq("user_id",currentUser.id);
